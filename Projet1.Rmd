@@ -9,13 +9,6 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
----
-title: "Modelisation projet (PSH)"
-author: "Anthéa de Koninck"
-date: "`r Sys.Date()`"
-output: html_document
----
-
 ```{r Loading packages}
 library(readr)
 library(R2jags)
@@ -41,25 +34,27 @@ hoopoe$x_vh_carr <- (hoopoe$heightC)^2
 x_vh <- hoopoe$heightC
 ```
 
-```{r Définition variable réponse}
-# P/A
-hoopoe$y <- ifelse(hoopoe$y == "random", 0, 1)
-plot(hoopoe$bare, hoopoe$y)
-y <- hoopoe$y
-
-```
-
 
 ```{r Création dataset}
+ringtest <- unique(hoopoe$ring)
+seq <- c(1:length(ringtest))
+ring <- c()
+for (i in 1:length(hoopoe$y)){
+  for (j in 1:length(ringtest)){
+    if(hoopoe$ring[i] == ringtest[j]){ ring <- c(ring, seq[j]) }
+    else{next}
+  }
+}
+
 datahoopoe <- list(
-  #ring <- hoopoe$ring,
+  N = length(hoopoe$y),
   bare = as.numeric(scale(hoopoe$bare)),
   bare_carre = as.numeric(scale(hoopoe$x_bg_carr)),
   height = as.numeric(scale(hoopoe$heightC)),
   height_carre = as.numeric(scale(hoopoe$x_vh_carr)),
-  y = hoopoe$y,
-  N = 1048
-  #nb = length(unique(hoopoe$ring))
+  y = ifelse(hoopoe$y == "random", 0, 1),
+  ring = ring,
+  nb = length(unique(ring))
 )
 ```
 
@@ -67,13 +62,12 @@ datahoopoe <- list(
 logisitic <- function(){
   for(i in 1:N){
     y[i] ~ dbin(p[i],1) # binomial likelihood
-    logit(p[i]) <- a + b.bare * bare[i] + b.bare_carre * bare_carre[i] + b.height * height[i] + b.height_carre * height_carre[i]
+    logit(p[i]) <- a[ring[i]] + b.bare * bare[i] + b.bare_carre * bare_carre[i] + b.height * height[i] + b.height_carre * height_carre[i]
   }
-  #for (j in 1:nb){
-  #  a[j] ~ dnorm(0,0.001) 
-  #}
+  for (j in 1:nb){
+    a[j] ~ dnorm(0,0.001) 
+  }
 # priors
-  a ~ dnorm(0,0.001) 
   b.bare ~ dnorm(0,0.001)
   b.bare_carre ~ dnorm(0,0.001)
   b.height ~ dnorm(0,0.001)
@@ -81,9 +75,9 @@ logisitic <- function(){
 }
 
 # initial values
-init1 <- list(a = 0.5, b.bare = 0.5, b.bare_carre = 0.5, b.height = 0.5, b.height_carre = 0.5)
-init2 <- list(a = -0.5, b.bare = -0.5, b.bare_carre = -0.5, b.height = -0.5, b.height_carre = -0.5)
-init3 <- list(a = 0, b.bare = 0, b.bare_carre = 0, b.height = 0, b.height_carre = 0)
+init1 <- list(a = rep(0.5, datahoopoe$nb), b.bare = 0.5, b.bare_carre = 0.5, b.height = 0.5, b.height_carre = 0.5)
+init2 <- list(a = rep(-0.5, datahoopoe$nb), b.bare = -0.5, b.bare_carre = -0.5, b.height = -0.5, b.height_carre = -0.5)
+init3 <- list(a = rep(0, datahoopoe$nb), b.bare = 0, b.bare_carre = 0, b.height = 0, b.height_carre = 0)
 init <- list(init1, init2, init3)
 
 # parameters to monitor
