@@ -10,7 +10,24 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r, include=FALSE}
+data <- read.csv2("hoopoe.csv", header = T)
 
+data$y <- ifelse(data$y == "random", 0, 1)
+
+plot(data$y)
+```
+
+Corrélation variables
+```{r, include = FALSE}
+cor(data$bare, data$heightC)
+data$bare_carr <- (data$bare)^2
+data$heightC_carr <- (data$heightC)^2
+cor(data$bare_carr, data$heightC_carr)
+```
+
+
+```{r}
+test <- glm(data$y~data$bare+data$bare_carr + data$heightC + data$heightC_carr + data$hab + data$habitat, family = binomial)
 
 ```
 
