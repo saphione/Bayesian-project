@@ -9,25 +9,113 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r, include=FALSE}
-data <- read.csv2("hoopoe.csv", header = T)
+---
+title: "Modelisation projet (PSH)"
+author: "Anthéa de Koninck"
+date: "`r Sys.Date()`"
+output: html_document
+---
 
-data$y <- ifelse(data$y == "random", 0, 1)
-
-plot(data$y)
-```
-
-Corrélation variables
-```{r, include = FALSE}
-cor(data$bare, data$heightC)
-data$bare_carr <- (data$bare)^2
-data$heightC_carr <- (data$heightC)^2
-cor(data$bare_carr, data$heightC_carr)
+```{r Loading packages}
+library(readr)
+library(R2jags)
+library(fitdistrplus)
 ```
 
 
 ```{r}
-test <- glm(data$y~data$bare+data$bare_carr + data$heightC + data$heightC_carr + data$hab + data$habitat, family = binomial)
+hoopoe <- read_delim("C:/Users/Saphione/OneDrive/Fac/M2/Cours/Bayésien/Projet/projet1/hoopoe.csv", delim = ";", escape_double = FALSE, trim_ws = TRUE)
+hoopoe <- hoopoe[,c(1:3,5:7)]
+```
+
+```{r}
+dataset <- rnorm(1000,0,100)
+hist(dataset, breaks = c(20))
+```
+
+
+We analysed the data separately for each species, applying a hierarchical logistic regression model (with random intercept and slope parameters) implemented in a Bayesian framework using
+Markov chain Monte Carlo simulation (Appendix S1). The response variable was Boolean, with a 0 value for random locations and 1 for foraging locations. 
+For each dominant habitat category for hoopoe (fruit tree plantation, grassland, all remaining habitat types together) we first ran the basic model including effects of bare ground and its square, as well as vegetation height and its square. This enabled us to evaluate whether the relationships between bird occurrence and vegetation structure were consistent among broad habitat categories. We found that this was the case (Figure S1), and thus did not consider habitat categories in subsequent analyses. 
+
+```{r Définition variables explicatives}
+# %bareground
+x_bg <- hoopoe$bare
+hoopoe$x_bg_carr <- (hoopoe$bare)^2
+hoopoe$x_vh_carr <- (hoopoe$heightC)^2
+#x_bg <- (hoopoe$bare - mean(hoopoe$bare))/sd(hoopoe$bare)
+# vegetation height
+x_vh <- hoopoe$heightC
+```
+
+```{r Définition variable réponse}
+# P/A
+hoopoe$y <- ifelse(hoopoe$y == "random", 0, 1)
+plot(hoopoe$bare, hoopoe$y)
+y <- hoopoe$y
 
 ```
+
+
+
+
+
+
+```{r Création dataset}
+datahoopoe <- list(
+  ring <- hoopoe$ring,
+  bare <- as.numeric(scale(hoopoe$bare)),
+  bare_carre <- as.numeric(scale(hoopoe$x_bg_carr)),
+  height <- as.numeric(scale(hoopoe$heightC)),
+  height_carre <- as.numeric(scale(hoopoe$x_vh_carr)),
+  y <- hoopoe$y,
+  nb = length(levels(hoopoe$ring))
+)
+```
+
+
+```{r logisitic model}
+logisitic <- function(){
+  for(i in 1:N){ # loop over years
+    y[i] ~ dbin(p[i],1) # binomial likelihood
+    logit(p[i]) <- a[ring[i]] + b.bare * bare[i] + b.bare_carre * bare_carre[i] + b.height * height[i] + b.height_carre * height_carre[i]
+  }
+  for (j in 1:nb){
+    a[j] ~ dnorm(0,0.001) 
+  }
+  # priors
+  b.bare ~ dnorm(0,0.001)
+  b.bare_carre ~ dnorm(0,0.001)
+  b.height ~ dnorm(0,0.001)
+  b.height_carre ~ dnorm(0,0.001) 
+}
+
+# initial values
+init1 <- list(a = 0.5, b.bare = 0.5, b.bare_carre = 0.5, b.height = 0.5, b.height_carre = 0.5)
+init2 <- list(a = -0.5, b.bare = -0.5, b.bare_carre = -0.5, b.height = -0.5, b.height_carre = -0.5)
+init3 <- list(a = 0, b.bare = 0, b.bare_carre = 0, b.height = 0, b.height_carre = 0)
+init <- list(init1, init2, init3)
+
+# parameters to monitor
+params <- c("a", "b.bare", "b.bare_carre", "b.height", "b.height_carre")
+# call jags to fit model
+partial_pooling_fit <- jags(data = datahoopoe,
+                             inits = init,
+                             parameters.to.save = params,
+                             model.file = logisitic,
+                             n.chains = 3,
+                             n.iter = 50000,
+                             n.burnin = 10000,
+                             n.thin = 1)
+partial_pooling_fit
+par(mfrow = c(1, 2))
+hist(partial_pooling_fit$BUGSoutput$sims.matrix[,"b"]) 
+plot(density(partial_pooling_fit$BUGSoutput$sims.matrix[,"b"]))
+```
+
+
+Second, we fitted different models that included different combinations of effects of bare ground and its square, as well as vegetation height and its square. The models were then ranked according to the deviance information criterion (DIC, [26]). Squared effects were included because of a likely trade-off between food abundance and accessibility on the one hand, and vegetation density and height on the other, which would result in curvilinear
+relationships peaking at intermediate values of predictor variables. Based on the best models we calculated predictive distributions to evaluate goodness-of-fit. We compared observed values with predicted values using x2-diagnostics and report Bayesian Pvalues. 
+
+
 
