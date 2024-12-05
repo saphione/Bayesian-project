@@ -7,6 +7,7 @@ output: pdf_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(R2jags)
 ```
 
 ```{r, include=FALSE}
@@ -39,4 +40,21 @@ data$heightC_stand <- (data$heightC - mean(data$heightC))/sd(data$heightC)
 data$heightC_carr_stand <- (data$heightC_carr - mean(data$heightC_carr))/sd(data$heightC_carr)
 
 ```
+
+```{r}
+logistic <- function() {
+  # likelihood
+  for(i in 1:N){ # loop over years
+  y[i] ~ dbin(p[i],1) # binomial likelihood
+  logit(p[i]) <- a + b.bare * bare[i] + b.heightC * heightC[i] + b.bare_carr * bare_carr[i] + b.height_carr * heightC_carr[i] # prob success is linear fn of temp and rainfall
+                                                         # on logit scale
+  }
+  # priors
+  a ~ dnorm(0,0.001) # intercept
+  b.bare ~ dnorm(0,0.001) 
+  b.height ~ dnorm(0,0.001)
+  
+}
+```
+
 
