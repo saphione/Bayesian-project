@@ -7,6 +7,8 @@ output: pdf_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(R2jags)
+library(MASS)
 ```
 
 ```{r, include=FALSE}
@@ -29,5 +31,40 @@ cor(data$bare_carr, data$heightC_carr)
 ```{r}
 test <- glm(data$y~data$bare+data$bare_carr + data$heightC + data$heightC_carr + data$hab + data$habitat, family = binomial)
 
+```
+
+standardisation
+```{r}
+data$bare_stand <- (data$bare - mean(data$bare))/sd(data$bare)
+data$bare_carr_stand <- (data$bare_carr - mean(data$bare_carr))/sd(data$bare_carr)
+data$heightC_stand <- (data$heightC - mean(data$heightC))/sd(data$heightC)
+data$heightC_carr_stand <- (data$heightC_carr - mean(data$heightC_carr))/sd(data$heightC_carr)
+
+```
+
+```{r}
+logistic <- function() {
+  # likelihood
+  for(i in 1:N){ # loop over years
+  y[i] ~ dbin(p[i],1) # binomial likelihood
+  logit(p[i]) <- a[ring[i]] + b.bare * bare[i] + b.heightC * heightC[i] + b.bare_carr * bare_carr[i] + b.height_carr * heightC_carr[i] # prob success is linear fn of temp and rainfall
+                                                         # on logit scale
+  }
+  for (j in 1:nbring){
+    a[j] ~ dnorm(0,0.001)
+  }
+  # priors
+  b.bare ~ dnorm(0,0.001) 
+  b.height ~ dnorm(0,0.001)
+  b.bare_carr ~ dnorm(0,0.001)
+  b.height_carr ~ dnorm(0,0.001)
+  
+}
+```
+
+```{r}
+dataset <- as.data.frame(rnorm(1000,0,100))
+
+dataset$`rnorm(1000, 0, 100)` <- (dataset$`rnorm(1000, 0, 100)`)^2
 ```
 
