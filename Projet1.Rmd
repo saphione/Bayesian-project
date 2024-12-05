@@ -52,20 +52,20 @@ y <- hoopoe$y
 
 ```{r Création dataset}
 datahoopoe <- list(
-  ring <- hoopoe$ring,
-  bare <- as.numeric(scale(hoopoe$bare)),
-  bare_carre <- as.numeric(scale(hoopoe$x_bg_carr)),
-  height <- as.numeric(scale(hoopoe$heightC)),
-  height_carre <- as.numeric(scale(hoopoe$x_vh_carr)),
-  y <- hoopoe$y,
-  N <- length(y)
+  #ring <- hoopoe$ring,
+  bare = as.numeric(scale(hoopoe$bare)),
+  bare_carre = as.numeric(scale(hoopoe$x_bg_carr)),
+  height = as.numeric(scale(hoopoe$heightC)),
+  height_carre = as.numeric(scale(hoopoe$x_vh_carr)),
+  y = hoopoe$y,
+  N = 1048
   #nb = length(unique(hoopoe$ring))
 )
 ```
 
 ```{r logisitic model}
 logisitic <- function(){
-  for(i in 1:N){ # loop over years
+  for(i in 1:N){
     y[i] ~ dbin(p[i],1) # binomial likelihood
     logit(p[i]) <- a + b.bare * bare[i] + b.bare_carre * bare_carre[i] + b.height * height[i] + b.height_carre * height_carre[i]
   }
@@ -99,8 +99,8 @@ partial_pooling_fit <- jags(data = datahoopoe,
                              n.thin = 1)
 partial_pooling_fit
 par(mfrow = c(1, 2))
-hist(partial_pooling_fit$BUGSoutput$sims.matrix[,"b"]) 
-plot(density(partial_pooling_fit$BUGSoutput$sims.matrix[,"b"]))
+hist(partial_pooling_fit$BUGSoutput$sims.matrix) 
+plot(density(partial_pooling_fit$BUGSoutput$sims.matrix))
 ```
 
 
