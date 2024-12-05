@@ -31,3 +31,12 @@ test <- glm(data$y~data$bare+data$bare_carr + data$heightC + data$heightC_carr +
 
 ```
 
+standardisation
+```{r}
+data$bare_stand <- (data$bare - mean(data$bare))/sd(data$bare)
+data$bare_carr_stand <- (data$bare_carr - mean(data$bare_carr))/sd(data$bare_carr)
+data$heightC_stand <- (data$heightC - mean(data$heightC))/sd(data$heightC)
+data$heightC_carr_stand <- (data$heightC_carr - mean(data$heightC_carr))/sd(data$heightC_carr)
+
+```
+
