@@ -58,27 +58,38 @@ datahoopoe <- list(
 )
 ```
 
-```{r logisitic model}
+```{r logisitic model complet}
 logisitic <- function(){
   for(i in 1:N){
     y[i] ~ dbin(p[i],1) # binomial likelihood
     logit(p[i]) <- a[ring[i]] + b.bare[ring[i]] * bare[i] + b.bare_carre[ring[i]] * bare_carre[i] + b.height[ring[i]] * height[i] + b.height_carre[ring[i]] * height_carre[i]
   }
   for (j in 1:nb){
-    a[j] ~ dnorm(0,0.001) 
-    b.bare[j] ~ dnorm(0,0.001)
-    b.bare_carre[j] ~ dnorm(0,0.001)
-    b.height[j] ~ dnorm(0,0.001)
-    b.height_carre[j] ~ dnorm(0,0.001) 
+    a[j] ~ dnorm(mua,vara) 
+    b.bare[j] ~ dnorm(mubare,varbare)
+    b.bare_carre[j] ~ dnorm(mubarec,varbarec)
+    b.height[j] ~ dnorm(muheight,varheight)
+    b.height_carre[j] ~ dnorm(muheightc,varheightc) 
   }
-#
+mua ~ dnorm(0,0.001) 
+mubare ~ dnorm(0,0.001) 
+mubarec ~ dnorm(0,0.001) 
+muheight ~ dnorm(0,0.001)
+muheightc ~ dnorm(0,0.001)
+vara ~ dunif(0,001)
+varbare ~ dunif(0,001)
+varheight ~ dunif(0,001)
+varbarec ~ dunif(0,001)
+varheightc ~ dunif(0,001)
 }
 
 # initial values
-init1 <- list(a = rep(0.5, datahoopoe$nb), b.bare = rep(0.5, datahoopoe$nb), b.bare_carre = rep(0.5, datahoopoe$nb), b.height = rep(0.5, datahoopoe$nb), b.height_carre = rep(0.5, datahoopoe$nb))
-init2 <- list(a = rep(-0.5, datahoopoe$nb), b.bare = rep(-0.5, datahoopoe$nb), b.bare_carre = rep(-0.5, datahoopoe$nb), b.height = rep(-0.5, datahoopoe$nb), b.height_carre = rep(-0.5, datahoopoe$nb))
+init1 <- list(a = rep(1, datahoopoe$nb), b.bare = rep(1, datahoopoe$nb), b.bare_carre = rep(1, datahoopoe$nb), b.height = rep(1, datahoopoe$nb), b.height_carre = rep(1, datahoopoe$nb))
+init2 <- list(a = rep(-1, datahoopoe$nb), b.bare = rep(-1, datahoopoe$nb), b.bare_carre = rep(-1, datahoopoe$nb), b.height = rep(-1, datahoopoe$nb), b.height_carre = rep(-1, datahoopoe$nb))
 init3 <- list(a = rep(0, datahoopoe$nb), b.bare = rep(0, datahoopoe$nb), b.bare_carre = rep(0, datahoopoe$nb), b.height = rep(0, datahoopoe$nb), b.height_carre = rep(0, datahoopoe$nb))
-init <- list(init1, init2, init3)
+init4 <- list(a = rep(-2, datahoopoe$nb), b.bare = rep(-2, datahoopoe$nb), b.bare_carre = rep(-2, datahoopoe$nb), b.height = rep(-2, datahoopoe$nb), b.height_carre = rep(-2, datahoopoe$nb))
+init5 <- list(a = rep(2, datahoopoe$nb), b.bare = rep(2, datahoopoe$nb), b.bare_carre = rep(2, datahoopoe$nb), b.height = rep(2, datahoopoe$nb), b.height_carre = rep(2, datahoopoe$nb))
+init <- list(init1, init2, init3, init4, init5)
 
 # parameters to monitor
 params <- c("a", "b.bare", "b.bare_carre", "b.height", "b.height_carre")
@@ -87,16 +98,20 @@ partial_pooling_fit <- jags(data = datahoopoe,
                              inits = init,
                              parameters.to.save = params,
                              model.file = logisitic,
-                             n.chains = 3,
+                             n.chains = 5,
                              n.iter = 30000,
                              n.burnin = 6000,
                              n.thin = 1)
 partial_pooling_fit
 par(mfrow = c(1, 2))
-hist(partial_pooling_fit$BUGSoutput$sims.matrix) 
+hist(partial_pooling_fit$BUGSoutput$sims.matrix)
 plot(density(partial_pooling_fit$BUGSoutput$sims.matrix))
 ```
 
+
+```{r}
+traceplot(partial_pooling_fit)
+```
 
 Second, we fitted different models that included different combinations of effects of bare ground and its square, as well as vegetation height and its square. The models were then ranked according to the deviance information criterion (DIC, [26]). Squared effects were included because of a likely trade-off between food abundance and accessibility on the one hand, and vegetation density and height on the other, which would result in curvilinear
 relationships peaking at intermediate values of predictor variables. Based on the best models we calculated predictive distributions to evaluate goodness-of-fit. We compared observed values with predicted values using x2-diagnostics and report Bayesian Pvalues. 
