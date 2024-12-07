@@ -18,6 +18,7 @@ library(R2jags)
 ```{r}
 hoopoe <- read_delim("C:/Users/Saphione/OneDrive/Fac/M2/Cours/Bayésien/Projet/projet1/hoopoe.csv", delim = ";", escape_double = FALSE, trim_ws = TRUE)
 hoopoe <- hoopoe[,c(1:3,5:7)]
+hoopoe$ring <- as.factor(hoopoe$ring)
 ```
 
 We analysed the data separately for each species, applying a hierarchical logistic regression model (with random intercept and slope parameters) implemented in a Bayesian framework using
@@ -27,34 +28,22 @@ For each dominant habitat category for hoopoe (fruit tree plantation, grassland,
 ```{r Définition variables explicatives}
 # %bareground
 x_bg <- hoopoe$bare
-hoopoe$x_bg_carr <- (hoopoe$bare)^2
-hoopoe$x_vh_carr <- (hoopoe$heightC)^2
-#x_bg <- (hoopoe$bare - mean(hoopoe$bare))/sd(hoopoe$bare)
+hoopoe$x_bg_carr <- (x_bg)^2
 # vegetation height
 x_vh <- hoopoe$heightC
+hoopoe$x_vh_carr <- (x_vh)^2
 ```
 
-
 ```{r Création dataset}
-ringtest <- unique(hoopoe$ring)
-seq <- c(1:length(ringtest))
-ring <- c()
-for (i in 1:length(hoopoe$y)){
-  for (j in 1:length(ringtest)){
-    if(hoopoe$ring[i] == ringtest[j]){ ring <- c(ring, seq[j]) }
-    else{next}
-  }
-}
-
 datahoopoe <- list(
   N = length(hoopoe$y),
+  y = ifelse(hoopoe$y == "random", 0, 1),
+  ring = as.numeric(hoopoe$ring),
+  nb = length(levels(hoopoe$ring)),
   bare = as.numeric(scale(hoopoe$bare)),
   bare_carre = as.numeric(scale(hoopoe$x_bg_carr)),
   height = as.numeric(scale(hoopoe$heightC)),
-  height_carre = as.numeric(scale(hoopoe$x_vh_carr)),
-  y = ifelse(hoopoe$y == "random", 0, 1),
-  ring = ring,
-  nb = length(unique(ring))
+  height_carre = as.numeric(scale(hoopoe$x_vh_carr))
 )
 ```
 
@@ -65,42 +54,47 @@ logisitic <- function(){
     logit(p[i]) <- a[ring[i]] + b.bare[ring[i]] * bare[i] + b.bare_carre[ring[i]] * bare_carre[i] + b.height[ring[i]] * height[i] + b.height_carre[ring[i]] * height_carre[i]
   }
   for (j in 1:nb){
-    a[j] ~ dnorm(mua,vara) 
-    b.bare[j] ~ dnorm(mubare,varbare)
-    b.bare_carre[j] ~ dnorm(mubarec,varbarec)
-    b.height[j] ~ dnorm(muheight,varheight)
-    b.height_carre[j] ~ dnorm(muheightc,varheightc) 
+    a[j] ~ dnorm(mua,tau.a) 
+    b.bare[j] ~ dnorm(mubare,tau.b)
+    b.bare_carre[j] ~ dnorm(mubarec,tau.bc)
+    b.height[j] ~ dnorm(muheight,tau.v)
+    b.height_carre[j] ~ dnorm(muheightc,tau.vc) 
   }
 mua ~ dnorm(0,0.001) 
 mubare ~ dnorm(0,0.001) 
 mubarec ~ dnorm(0,0.001) 
 muheight ~ dnorm(0,0.001)
 muheightc ~ dnorm(0,0.001)
-vara ~ dunif(0,001)
-varbare ~ dunif(0,001)
-varheight ~ dunif(0,001)
-varbarec ~ dunif(0,001)
-varheightc ~ dunif(0,001)
+tau.a <- 1 / (sigma.a * sigma.a)
+sigma.a ~ dunif(0,100)
+tau.b <- 1 / (sigma.b * sigma.b)
+sigma.b ~ dunif(0,100)
+tau.bc <- 1 / (sigma.bc * sigma.bc)
+sigma.bc ~ dunif(0,100)
+tau.v <- 1 / (sigma.v * sigma.v)
+sigma.v ~ dunif(0,100)
+tau.vc <- 1 / (sigma.vc * sigma.vc)
+sigma.vc ~ dunif(0,100)
 }
 
 # initial values
-init1 <- list(a = rep(1, datahoopoe$nb), b.bare = rep(1, datahoopoe$nb), b.bare_carre = rep(1, datahoopoe$nb), b.height = rep(1, datahoopoe$nb), b.height_carre = rep(1, datahoopoe$nb))
-init2 <- list(a = rep(-1, datahoopoe$nb), b.bare = rep(-1, datahoopoe$nb), b.bare_carre = rep(-1, datahoopoe$nb), b.height = rep(-1, datahoopoe$nb), b.height_carre = rep(-1, datahoopoe$nb))
+init1 <- list(a = rep(0.5, datahoopoe$nb), b.bare = rep(1, datahoopoe$nb), b.bare_carre = rep(1, datahoopoe$nb), b.height = rep(1, datahoopoe$nb), b.height_carre = rep(1, datahoopoe$nb))
+init2 <- list(a = rep(-0.5, datahoopoe$nb), b.bare = rep(-1, datahoopoe$nb), b.bare_carre = rep(-1, datahoopoe$nb), b.height = rep(-1, datahoopoe$nb), b.height_carre = rep(-1, datahoopoe$nb))
 init3 <- list(a = rep(0, datahoopoe$nb), b.bare = rep(0, datahoopoe$nb), b.bare_carre = rep(0, datahoopoe$nb), b.height = rep(0, datahoopoe$nb), b.height_carre = rep(0, datahoopoe$nb))
-init4 <- list(a = rep(-2, datahoopoe$nb), b.bare = rep(-2, datahoopoe$nb), b.bare_carre = rep(-2, datahoopoe$nb), b.height = rep(-2, datahoopoe$nb), b.height_carre = rep(-2, datahoopoe$nb))
-init5 <- list(a = rep(2, datahoopoe$nb), b.bare = rep(2, datahoopoe$nb), b.bare_carre = rep(2, datahoopoe$nb), b.height = rep(2, datahoopoe$nb), b.height_carre = rep(2, datahoopoe$nb))
+init4 <- list(a = rep(-1, datahoopoe$nb), b.bare = rep(-1, datahoopoe$nb), b.bare_carre = rep(-1, datahoopoe$nb), b.height = rep(-1, datahoopoe$nb), b.height_carre = rep(-1, datahoopoe$nb))
+init5 <- list(a = rep(1, datahoopoe$nb), b.bare = rep(1, datahoopoe$nb), b.bare_carre = rep(1, datahoopoe$nb), b.height = rep(1, datahoopoe$nb), b.height_carre = rep(1, datahoopoe$nb))
 init <- list(init1, init2, init3, init4, init5)
 
-# parameters to monitor
-params <- c("a", "b.bare", "b.bare_carre", "b.height", "b.height_carre")
+# parameters to monitor , 
+params <- c("a","b.bare", "b.bare_carre", "b.height", "b.height_carre")
 # call jags to fit model
 partial_pooling_fit <- jags(data = datahoopoe,
                              inits = init,
                              parameters.to.save = params,
                              model.file = logisitic,
                              n.chains = 5,
-                             n.iter = 30000,
-                             n.burnin = 6000,
+                             n.iter = 60000,
+                             n.burnin = 15000,
                              n.thin = 1)
 partial_pooling_fit
 par(mfrow = c(1, 2))
