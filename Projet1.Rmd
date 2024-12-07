@@ -9,23 +9,34 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r Loading packages}
+# Bayesian's project
+
+Article : Patches of Bare Ground as a Staple Commodity for Declining Ground-Foraging Insectivorous Farmland Birds
+
+## 1. Loading and exploring the data
+
+### Loading packages
+
+```{r Loading packages, include=FALSE}
 library(readr)
 library(R2jags)
 ```
 
+### Loading dataset
 
-```{r}
+```{r Loading dataset, include=FALSE}
 hoopoe <- read_delim("C:/Users/Saphione/OneDrive/Fac/M2/Cours/Bayésien/Projet/projet1/hoopoe.csv", delim = ";", escape_double = FALSE, trim_ws = TRUE)
 hoopoe <- hoopoe[,c(1:3,5:7)]
 hoopoe$ring <- as.factor(hoopoe$ring)
 ```
 
-We analysed the data separately for each species, applying a hierarchical logistic regression model (with random intercept and slope parameters) implemented in a Bayesian framework using
-Markov chain Monte Carlo simulation (Appendix S1). The response variable was Boolean, with a 0 value for random locations and 1 for foraging locations. 
-For each dominant habitat category for hoopoe (fruit tree plantation, grassland, all remaining habitat types together) we first ran the basic model including effects of bare ground and its square, as well as vegetation height and its square. This enabled us to evaluate whether the relationships between bird occurrence and vegetation structure were consistent among broad habitat categories. We found that this was the case (Figure S1), and thus did not consider habitat categories in subsequent analyses. 
+### What about the data ??
 
-```{r Définition variables explicatives}
+#### Creation of the explicative variables
+
+We don't forget to scale the variables.
+
+```{r Définition variables explicatives, include = F}
 # %bareground
 x_bg <- hoopoe$bare
 hoopoe$x_bg_carr <- (x_bg)^2
@@ -33,6 +44,34 @@ hoopoe$x_bg_carr <- (x_bg)^2
 x_vh <- hoopoe$heightC
 hoopoe$x_vh_carr <- (x_vh)^2
 ```
+
+We put the response variable as a numerical variable instead of a character one.
+
+Doesn't seem to have a relation between the y variable and the two explicative variables ??
+
+#### Classic representations
+
+```{r Some classic representation}
+hoopoe$y <- ifelse(hoopoe$y == "random", 0, 1)
+hist(hoopoe$bare)
+hist(hoopoe$heightC)
+plot(hoopoe$bare, hoopoe$y)
+plot(hoopoe$heightC, hoopoe$y)
+```
+
+## 2. Ajusting a simple model
+
+Our goal is to find a relation between the %bareground or the vegetation height and the response variable.
+
+For that, we will use a Bayesian approach (since that the name of the course lol) while considering random effects on the slope and on the intercept. To construct that model, we need priors and data. Since we don't have any assumption available on the two explicative variables (actually yes we can imagine some with the representation but let's forget about that), we will consider a normal distribution for the priors, which are here not informative. So, one of the assumptions is that we have enough information in our data to represent the structure and the interaction that we are researching (annnnnnd we have 13 individuals.... robust analysis).
+
+### Construction of the model
+
+To construct the model, we need to regroup a lot of variables inside an only dataset.
+
+The model take two things into account : the number of rows (N), the number of observations, and the number of individuals (nb), what we will consider as a possible random effet. Our model have one response variable (y), which is boolean (0 if the considered random loaction is random, 1 if it is not) and four explicative variables (%bareground, square(%bareground), vegetation height, square(vegetation height).
+
+### Creation of the dataset
 
 ```{r Création dataset}
 datahoopoe <- list(
@@ -47,10 +86,15 @@ datahoopoe <- list(
 )
 ```
 
-```{r logisitic model complet}
+### Construction of the function
+
+To run the MCMC method, we need a function that will be put in input on Jags. That function takes into account random effect on the slopes and on the intercept. We then input the initial values of the parameters. We can finally run the model.
+
+```{r}
+# Function
 logisitic <- function(){
   for(i in 1:N){
-    y[i] ~ dbin(p[i],1) # binomial likelihood
+    y[i] ~ dbin(p[i],1) # Binomial likelihood
     logit(p[i]) <- a[ring[i]] + b.bare[ring[i]] * bare[i] + b.bare_carre[ring[i]] * bare_carre[i] + b.height[ring[i]] * height[i] + b.height_carre[ring[i]] * height_carre[i]
   }
   for (j in 1:nb){
@@ -77,7 +121,7 @@ tau.vc <- 1 / (sigma.vc * sigma.vc)
 sigma.vc ~ dunif(0,100)
 }
 
-# initial values
+# Initial values
 init1 <- list(a = rep(0.5, datahoopoe$nb), b.bare = rep(1, datahoopoe$nb), b.bare_carre = rep(1, datahoopoe$nb), b.height = rep(1, datahoopoe$nb), b.height_carre = rep(1, datahoopoe$nb))
 init2 <- list(a = rep(-0.5, datahoopoe$nb), b.bare = rep(-1, datahoopoe$nb), b.bare_carre = rep(-1, datahoopoe$nb), b.height = rep(-1, datahoopoe$nb), b.height_carre = rep(-1, datahoopoe$nb))
 init3 <- list(a = rep(0, datahoopoe$nb), b.bare = rep(0, datahoopoe$nb), b.bare_carre = rep(0, datahoopoe$nb), b.height = rep(0, datahoopoe$nb), b.height_carre = rep(0, datahoopoe$nb))
@@ -85,9 +129,10 @@ init4 <- list(a = rep(-1, datahoopoe$nb), b.bare = rep(-1, datahoopoe$nb), b.bar
 init5 <- list(a = rep(1, datahoopoe$nb), b.bare = rep(1, datahoopoe$nb), b.bare_carre = rep(1, datahoopoe$nb), b.height = rep(1, datahoopoe$nb), b.height_carre = rep(1, datahoopoe$nb))
 init <- list(init1, init2, init3, init4, init5)
 
-# parameters to monitor , 
+# Parameters to monitor
 params <- c("a","b.bare", "b.bare_carre", "b.height", "b.height_carre")
-# call jags to fit model
+
+# Call jags to fit model
 partial_pooling_fit <- jags(data = datahoopoe,
                              inits = init,
                              parameters.to.save = params,
@@ -97,18 +142,35 @@ partial_pooling_fit <- jags(data = datahoopoe,
                              n.burnin = 15000,
                              n.thin = 1)
 partial_pooling_fit
-par(mfrow = c(1, 2))
-hist(partial_pooling_fit$BUGSoutput$sims.matrix)
-plot(density(partial_pooling_fit$BUGSoutput$sims.matrix))
+#par(mfrow = c(1, 2))
+#hist(partial_pooling_fit$BUGSoutput$sims.matrix)
+#plot(density(partial_pooling_fit$BUGSoutput$sims.matrix))
 ```
 
+## 3. Comparing the different models
+
+Sooooo, like, what are we suppose to put here ???
+
+We are gonna use the DIC to choose the best model, which is .....
+
+##  4. Infering and interpreting the best model
+
+Sur la base du meilleur modèle, donnez les estimations des paramètres ainsi qu'une mesure de l'incertitude associée. Interprétez vos résultats.
 
 ```{r}
 traceplot(partial_pooling_fit)
 ```
 
-Second, we fitted different models that included different combinations of effects of bare ground and its square, as well as vegetation height and its square. The models were then ranked according to the deviance information criterion (DIC, [26]). Squared effects were included because of a likely trade-off between food abundance and accessibility on the one hand, and vegetation density and height on the other, which would result in curvilinear
-relationships peaking at intermediate values of predictor variables. Based on the best models we calculated predictive distributions to evaluate goodness-of-fit. We compared observed values with predicted values using x2-diagnostics and report Bayesian Pvalues. 
+With that, we can use some representations :
 
+```{r}
+# Refaire le graphe de l'article :)
+```
 
+## 5. Discussion
 
+Comparez vos résultats à ceux du papier. Sont-ils semblables ou différents? Pourquoi selon vous? Si cela vous semble pertinent, proposez des pistes d'amélioration de l'analyse.
+
+Well, here, we literally re use the same method as the article sooooooo....
+
+maybe using an exponential or a poisson priors ??? like it's more informative ??? idk
