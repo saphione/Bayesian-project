@@ -113,88 +113,96 @@
 \begin{document}
 \maketitle
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\FunctionTok{library}\NormalTok{(readr)}
-\FunctionTok{library}\NormalTok{(R2jags)}
-\end{Highlighting}
-\end{Shaded}
+\section{Bayesian's project}\label{bayesians-project}
 
-\begin{verbatim}
-## Le chargement a nécessité le package : rjags
-\end{verbatim}
+Article : Patches of Bare Ground as a Staple Commodity for Declining
+Ground-Foraging Insectivorous Farmland Birds
 
-\begin{verbatim}
-## Le chargement a nécessité le package : coda
-\end{verbatim}
+\subsection{1. Loading and exploring the
+data}\label{loading-and-exploring-the-data}
 
-\begin{verbatim}
-## Linked to JAGS 4.3.1
-\end{verbatim}
+\subsubsection{Loading packages}\label{loading-packages}
 
-\begin{verbatim}
-## Loaded modules: basemod,bugs
-\end{verbatim}
+\subsubsection{Loading dataset}\label{loading-dataset}
 
-\begin{verbatim}
-## 
-## Attachement du package : 'R2jags'
-\end{verbatim}
+\subsubsection{What about the data ??}\label{what-about-the-data}
 
-\begin{verbatim}
-## L'objet suivant est masqué depuis 'package:coda':
-## 
-##     traceplot
-\end{verbatim}
+\paragraph{Creation of the explicative
+variables}\label{creation-of-the-explicative-variables}
+
+We don't forget to scale the variables.
+
+We put the response variable as a numerical variable instead of a
+character one.
+
+Doesn't seem to have a relation between the y variable and the two
+explicative variables ??
+
+\paragraph{Classic representations}\label{classic-representations}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{hoopoe }\OtherTok{\textless{}{-}} \FunctionTok{read\_delim}\NormalTok{(}\StringTok{"C:/Users/Saphione/OneDrive/Fac/M2/Cours/Bayésien/Projet/projet1/hoopoe.csv"}\NormalTok{, }\AttributeTok{delim =} \StringTok{";"}\NormalTok{, }\AttributeTok{escape\_double =} \ConstantTok{FALSE}\NormalTok{, }\AttributeTok{trim\_ws =} \ConstantTok{TRUE}\NormalTok{)}
+\NormalTok{hoopoe}\SpecialCharTok{$}\NormalTok{y }\OtherTok{\textless{}{-}} \FunctionTok{ifelse}\NormalTok{(hoopoe}\SpecialCharTok{$}\NormalTok{y }\SpecialCharTok{==} \StringTok{"random"}\NormalTok{, }\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{)}
+\FunctionTok{hist}\NormalTok{(hoopoe}\SpecialCharTok{$}\NormalTok{bare)}
 \end{Highlighting}
 \end{Shaded}
 
-\begin{verbatim}
-## Rows: 1048 Columns: 7
-## -- Column specification --------------------------------------------------------
-## Delimiter: ";"
-## chr (5): y, ring, height, hab, habitat
-## dbl (2): bare, heightC
-## 
-## i Use `spec()` to retrieve the full column specification for this data.
-## i Specify the column types or set `show_col_types = FALSE` to quiet this message.
-\end{verbatim}
+\includegraphics{Projet1_files/figure-latex/Some classic representation-1.pdf}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{hoopoe }\OtherTok{\textless{}{-}}\NormalTok{ hoopoe[,}\FunctionTok{c}\NormalTok{(}\DecValTok{1}\SpecialCharTok{:}\DecValTok{3}\NormalTok{,}\DecValTok{5}\SpecialCharTok{:}\DecValTok{7}\NormalTok{)]}
-\NormalTok{hoopoe}\SpecialCharTok{$}\NormalTok{ring }\OtherTok{\textless{}{-}} \FunctionTok{as.factor}\NormalTok{(hoopoe}\SpecialCharTok{$}\NormalTok{ring)}
+\FunctionTok{hist}\NormalTok{(hoopoe}\SpecialCharTok{$}\NormalTok{heightC)}
 \end{Highlighting}
 \end{Shaded}
 
-We analysed the data separately for each species, applying a
-hierarchical logistic regression model (with random intercept and slope
-parameters) implemented in a Bayesian framework using Markov chain Monte
-Carlo simulation (Appendix S1). The response variable was Boolean, with
-a 0 value for random locations and 1 for foraging locations. For each
-dominant habitat category for hoopoe (fruit tree plantation, grassland,
-all remaining habitat types together) we first ran the basic model
-including effects of bare ground and its square, as well as vegetation
-height and its square. This enabled us to evaluate whether the
-relationships between bird occurrence and vegetation structure were
-consistent among broad habitat categories. We found that this was the
-case (Figure S1), and thus did not consider habitat categories in
-subsequent analyses.
+\includegraphics{Projet1_files/figure-latex/Some classic representation-2.pdf}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{\# \%bareground}
-\NormalTok{x\_bg }\OtherTok{\textless{}{-}}\NormalTok{ hoopoe}\SpecialCharTok{$}\NormalTok{bare}
-\NormalTok{hoopoe}\SpecialCharTok{$}\NormalTok{x\_bg\_carr }\OtherTok{\textless{}{-}}\NormalTok{ (x\_bg)}\SpecialCharTok{\^{}}\DecValTok{2}
-\CommentTok{\# vegetation height}
-\NormalTok{x\_vh }\OtherTok{\textless{}{-}}\NormalTok{ hoopoe}\SpecialCharTok{$}\NormalTok{heightC}
-\NormalTok{hoopoe}\SpecialCharTok{$}\NormalTok{x\_vh\_carr }\OtherTok{\textless{}{-}}\NormalTok{ (x\_vh)}\SpecialCharTok{\^{}}\DecValTok{2}
+\FunctionTok{plot}\NormalTok{(hoopoe}\SpecialCharTok{$}\NormalTok{bare, hoopoe}\SpecialCharTok{$}\NormalTok{y)}
 \end{Highlighting}
 \end{Shaded}
+
+\includegraphics{Projet1_files/figure-latex/Some classic representation-3.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{plot}\NormalTok{(hoopoe}\SpecialCharTok{$}\NormalTok{heightC, hoopoe}\SpecialCharTok{$}\NormalTok{y)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Projet1_files/figure-latex/Some classic representation-4.pdf}
+
+\subsection{2. Ajusting a simple model}\label{ajusting-a-simple-model}
+
+Our goal is to find a relation between the \%bareground or the
+vegetation height and the response variable.
+
+For that, we will use a Bayesian approach (since that the name of the
+course lol) while considering random effects on the slope and on the
+intercept. To construct that model, we need priors and data. Since we
+don't have any assumption available on the two explicative variables
+(actually yes we can imagine some with the representation but let's
+forget about that), we will consider a normal distribution for the
+priors, which are here not informative. So, one of the assumptions is
+that we have enough information in our data to represent the structure
+and the interaction that we are researching (annnnnnd we have 13
+individuals\ldots. robust analysis).
+
+\subsubsection{Construction of the
+model}\label{construction-of-the-model}
+
+To construct the model, we need to regroup a lot of variables inside an
+only dataset.
+
+The model take two things into account : the number of rows (N), the
+number of observations, and the number of individuals (nb), what we will
+consider as a possible random effet. Our model have one response
+variable (y), which is boolean (0 if the considered random loaction is
+random, 1 if it is not) and four explicative variables (\%bareground,
+square(\%bareground), vegetation height, square(vegetation height).
+
+\subsubsection{Creation of the dataset}\label{creation-of-the-dataset}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -211,11 +219,20 @@ subsequent analyses.
 \end{Highlighting}
 \end{Shaded}
 
+\subsubsection{Construction of the
+function}\label{construction-of-the-function}
+
+To run the MCMC method, we need a function that will be put in input on
+Jags. That function takes into account random effect on the slopes and
+on the intercept. We then input the initial values of the parameters. We
+can finally run the model.
+
 \begin{Shaded}
 \begin{Highlighting}[]
+\CommentTok{\# Function}
 \NormalTok{logisitic }\OtherTok{\textless{}{-}} \ControlFlowTok{function}\NormalTok{()\{}
   \ControlFlowTok{for}\NormalTok{(i }\ControlFlowTok{in} \DecValTok{1}\SpecialCharTok{:}\NormalTok{N)\{}
-\NormalTok{    y[i] }\SpecialCharTok{\textasciitilde{}} \FunctionTok{dbin}\NormalTok{(p[i],}\DecValTok{1}\NormalTok{) }\CommentTok{\# binomial likelihood}
+\NormalTok{    y[i] }\SpecialCharTok{\textasciitilde{}} \FunctionTok{dbin}\NormalTok{(p[i],}\DecValTok{1}\NormalTok{) }\CommentTok{\# Binomial likelihood}
     \FunctionTok{logit}\NormalTok{(p[i]) }\OtherTok{\textless{}{-}}\NormalTok{ a[ring[i]] }\SpecialCharTok{+}\NormalTok{ b.bare[ring[i]] }\SpecialCharTok{*}\NormalTok{ bare[i] }\SpecialCharTok{+}\NormalTok{ b.bare\_carre[ring[i]] }\SpecialCharTok{*}\NormalTok{ bare\_carre[i] }\SpecialCharTok{+}\NormalTok{ b.height[ring[i]] }\SpecialCharTok{*}\NormalTok{ height[i] }\SpecialCharTok{+}\NormalTok{ b.height\_carre[ring[i]] }\SpecialCharTok{*}\NormalTok{ height\_carre[i]}
 \NormalTok{  \}}
   \ControlFlowTok{for}\NormalTok{ (j }\ControlFlowTok{in} \DecValTok{1}\SpecialCharTok{:}\NormalTok{nb)\{}
@@ -242,7 +259,7 @@ subsequent analyses.
 \NormalTok{sigma.vc }\SpecialCharTok{\textasciitilde{}} \FunctionTok{dunif}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{100}\NormalTok{)}
 \NormalTok{\}}
 
-\CommentTok{\# initial values}
+\CommentTok{\# Initial values}
 \NormalTok{init1 }\OtherTok{\textless{}{-}} \FunctionTok{list}\NormalTok{(}\AttributeTok{a =} \FunctionTok{rep}\NormalTok{(}\FloatTok{0.5}\NormalTok{, datahoopoe}\SpecialCharTok{$}\NormalTok{nb), }\AttributeTok{b.bare =} \FunctionTok{rep}\NormalTok{(}\DecValTok{1}\NormalTok{, datahoopoe}\SpecialCharTok{$}\NormalTok{nb), }\AttributeTok{b.bare\_carre =} \FunctionTok{rep}\NormalTok{(}\DecValTok{1}\NormalTok{, datahoopoe}\SpecialCharTok{$}\NormalTok{nb), }\AttributeTok{b.height =} \FunctionTok{rep}\NormalTok{(}\DecValTok{1}\NormalTok{, datahoopoe}\SpecialCharTok{$}\NormalTok{nb), }\AttributeTok{b.height\_carre =} \FunctionTok{rep}\NormalTok{(}\DecValTok{1}\NormalTok{, datahoopoe}\SpecialCharTok{$}\NormalTok{nb))}
 \NormalTok{init2 }\OtherTok{\textless{}{-}} \FunctionTok{list}\NormalTok{(}\AttributeTok{a =} \FunctionTok{rep}\NormalTok{(}\SpecialCharTok{{-}}\FloatTok{0.5}\NormalTok{, datahoopoe}\SpecialCharTok{$}\NormalTok{nb), }\AttributeTok{b.bare =} \FunctionTok{rep}\NormalTok{(}\SpecialCharTok{{-}}\DecValTok{1}\NormalTok{, datahoopoe}\SpecialCharTok{$}\NormalTok{nb), }\AttributeTok{b.bare\_carre =} \FunctionTok{rep}\NormalTok{(}\SpecialCharTok{{-}}\DecValTok{1}\NormalTok{, datahoopoe}\SpecialCharTok{$}\NormalTok{nb), }\AttributeTok{b.height =} \FunctionTok{rep}\NormalTok{(}\SpecialCharTok{{-}}\DecValTok{1}\NormalTok{, datahoopoe}\SpecialCharTok{$}\NormalTok{nb), }\AttributeTok{b.height\_carre =} \FunctionTok{rep}\NormalTok{(}\SpecialCharTok{{-}}\DecValTok{1}\NormalTok{, datahoopoe}\SpecialCharTok{$}\NormalTok{nb))}
 \NormalTok{init3 }\OtherTok{\textless{}{-}} \FunctionTok{list}\NormalTok{(}\AttributeTok{a =} \FunctionTok{rep}\NormalTok{(}\DecValTok{0}\NormalTok{, datahoopoe}\SpecialCharTok{$}\NormalTok{nb), }\AttributeTok{b.bare =} \FunctionTok{rep}\NormalTok{(}\DecValTok{0}\NormalTok{, datahoopoe}\SpecialCharTok{$}\NormalTok{nb), }\AttributeTok{b.bare\_carre =} \FunctionTok{rep}\NormalTok{(}\DecValTok{0}\NormalTok{, datahoopoe}\SpecialCharTok{$}\NormalTok{nb), }\AttributeTok{b.height =} \FunctionTok{rep}\NormalTok{(}\DecValTok{0}\NormalTok{, datahoopoe}\SpecialCharTok{$}\NormalTok{nb), }\AttributeTok{b.height\_carre =} \FunctionTok{rep}\NormalTok{(}\DecValTok{0}\NormalTok{, datahoopoe}\SpecialCharTok{$}\NormalTok{nb))}
@@ -250,9 +267,10 @@ subsequent analyses.
 \NormalTok{init5 }\OtherTok{\textless{}{-}} \FunctionTok{list}\NormalTok{(}\AttributeTok{a =} \FunctionTok{rep}\NormalTok{(}\DecValTok{1}\NormalTok{, datahoopoe}\SpecialCharTok{$}\NormalTok{nb), }\AttributeTok{b.bare =} \FunctionTok{rep}\NormalTok{(}\DecValTok{1}\NormalTok{, datahoopoe}\SpecialCharTok{$}\NormalTok{nb), }\AttributeTok{b.bare\_carre =} \FunctionTok{rep}\NormalTok{(}\DecValTok{1}\NormalTok{, datahoopoe}\SpecialCharTok{$}\NormalTok{nb), }\AttributeTok{b.height =} \FunctionTok{rep}\NormalTok{(}\DecValTok{1}\NormalTok{, datahoopoe}\SpecialCharTok{$}\NormalTok{nb), }\AttributeTok{b.height\_carre =} \FunctionTok{rep}\NormalTok{(}\DecValTok{1}\NormalTok{, datahoopoe}\SpecialCharTok{$}\NormalTok{nb))}
 \NormalTok{init }\OtherTok{\textless{}{-}} \FunctionTok{list}\NormalTok{(init1, init2, init3, init4, init5)}
 
-\CommentTok{\# parameters to monitor , }
+\CommentTok{\# Parameters to monitor}
 \NormalTok{params }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}\StringTok{"a"}\NormalTok{,}\StringTok{"b.bare"}\NormalTok{, }\StringTok{"b.bare\_carre"}\NormalTok{, }\StringTok{"b.height"}\NormalTok{, }\StringTok{"b.height\_carre"}\NormalTok{)}
-\CommentTok{\# call jags to fit model}
+
+\CommentTok{\# Call jags to fit model}
 \NormalTok{partial\_pooling\_fit }\OtherTok{\textless{}{-}} \FunctionTok{jags}\NormalTok{(}\AttributeTok{data =}\NormalTok{ datahoopoe,}
                              \AttributeTok{inits =}\NormalTok{ init,}
                              \AttributeTok{parameters.to.save =}\NormalTok{ params,}
@@ -287,161 +305,173 @@ subsequent analyses.
 \end{Shaded}
 
 \begin{verbatim}
-## Inference for Bugs model at "C:/Users/Saphione/AppData/Local/Temp/Rtmpy64TgK/model4f3c658a3a21", fit using jags,
+## Inference for Bugs model at "C:/Users/Saphione/AppData/Local/Temp/RtmpOOsBkl/model154867217ed6", fit using jags,
 ##  5 chains, each with 60000 iterations (first 15000 discarded)
-##  n.sims = 225000 iterations saved. Running time = 338.45 secs
-##                    mu.vect sd.vect    2.5%     25%     50%      75%    97.5%
-## a[1]                -0.210   0.220  -0.666  -0.354  -0.199   -0.057    0.195
-## a[2]                -0.243   0.367  -1.064  -0.457  -0.204    0.003    0.396
-## a[3]                 0.052   0.228  -0.394  -0.097   0.048    0.199    0.513
-## a[4]                 0.034   0.359  -0.674  -0.183   0.023    0.243    0.792
-## a[5]                -0.431   0.320  -1.115  -0.636  -0.408   -0.197    0.113
-## a[6]                -0.027   0.241  -0.505  -0.182  -0.027    0.127    0.457
-## a[7]                -0.055   0.257  -0.580  -0.217  -0.050    0.110    0.448
-## a[8]                -0.162   0.269  -0.728  -0.332  -0.146    0.019    0.333
-## a[9]                -0.396   0.287  -0.999  -0.584  -0.381   -0.189    0.104
-## a[10]                0.061   0.213  -0.355  -0.080   0.058    0.200    0.491
-## a[11]               -0.081   0.349  -0.820  -0.286  -0.067    0.133    0.595
-## a[12]                0.379   0.245  -0.072   0.204   0.372    0.543    0.879
-## a[13]                0.292   0.238  -0.136   0.123   0.282    0.450    0.785
-## b.bare[1]            3.801   0.429   2.938   3.522   3.803    4.088    4.639
-## b.bare[2]            4.002   0.497   3.070   3.677   3.980    4.305    5.049
-## b.bare[3]            4.028   0.445   3.210   3.724   4.010    4.307    4.962
-## b.bare[4]            4.031   0.494   3.132   3.701   4.004    4.327    5.093
-## b.bare[5]            3.940   0.481   2.992   3.636   3.933    4.242    4.917
-## b.bare[6]            4.044   0.441   3.231   3.741   4.027    4.324    4.966
-## b.bare[7]            4.200   0.554   3.258   3.812   4.146    4.536    5.426
-## b.bare[8]            4.272   0.568   3.326   3.869   4.209    4.617    5.538
-## b.bare[9]            4.112   0.485   3.247   3.775   4.082    4.411    5.155
-## b.bare[10]           3.703   0.446   2.761   3.426   3.717    4.004    4.530
-## b.bare[11]           3.842   0.490   2.819   3.543   3.850    4.156    4.790
-## b.bare[12]           3.802   0.429   2.939   3.522   3.801    4.089    4.641
-## b.bare[13]           3.936   0.415   3.145   3.657   3.928    4.203    4.779
-## b.bare_carre[1]     -3.507   0.482  -4.490  -3.820  -3.491   -3.181   -2.595
-## b.bare_carre[2]     -2.962   0.526  -3.963  -3.313  -2.979   -2.624   -1.885
-## b.bare_carre[3]     -3.161   0.412  -4.001  -3.424  -3.152   -2.884   -2.381
-## b.bare_carre[4]     -3.241   0.560  -4.380  -3.596  -3.234   -2.877   -2.144
-## b.bare_carre[5]     -2.423   0.748  -3.701  -2.962  -2.484   -1.948   -0.817
-## b.bare_carre[6]     -2.907   0.610  -4.076  -3.313  -2.929   -2.513   -1.662
-## b.bare_carre[7]     -2.215   0.669  -3.452  -2.684  -2.220   -1.768   -0.874
-## b.bare_carre[8]     -2.380   0.650  -3.562  -2.842  -2.396   -1.943   -1.060
-## b.bare_carre[9]     -2.799   0.456  -3.691  -3.110  -2.796   -2.489   -1.913
-## b.bare_carre[10]    -3.241   0.426  -4.055  -3.524  -3.251   -2.970   -2.368
-## b.bare_carre[11]    -3.445   0.607  -4.734  -3.820  -3.412   -3.042   -2.321
-## b.bare_carre[12]    -3.574   0.435  -4.443  -3.863  -3.566   -3.281   -2.732
-## b.bare_carre[13]    -3.308   0.398  -4.118  -3.566  -3.301   -3.041   -2.549
-## b.height[1]         -0.475   0.571  -1.533  -0.858  -0.500   -0.121    0.732
-## b.height[2]         -0.737   0.786  -2.321  -1.244  -0.726   -0.219    0.786
-## b.height[3]         -0.952   0.547  -2.076  -1.299  -0.939   -0.587    0.091
-## b.height[4]         -0.795   0.833  -2.482  -1.331  -0.780   -0.243    0.806
-## b.height[5]         -2.878   0.850  -4.668  -3.417  -2.837   -2.294   -1.329
-## b.height[6]         -0.033   0.578  -1.145  -0.415  -0.043    0.340    1.139
-## b.height[7]          0.158   0.609  -1.010  -0.244   0.151    0.547    1.394
-## b.height[8]         -0.029   0.586  -1.179  -0.413  -0.034    0.352    1.141
-## b.height[9]          0.536   0.669  -0.876   0.124   0.569    0.981    1.776
-## b.height[10]        -0.713   0.549  -1.880  -1.054  -0.687   -0.343    0.295
-## b.height[11]        -0.550   0.715  -1.985  -1.011  -0.541   -0.079    0.841
-## b.height[12]         0.183   0.607  -0.889  -0.233   0.139    0.548    1.510
-## b.height[13]         0.054   0.516  -0.911  -0.292   0.035    0.382    1.126
-## b.height_carre[1]   -0.272   0.570  -1.535  -0.608  -0.225    0.108    0.736
-## b.height_carre[2]   -0.187   0.652  -1.629  -0.544  -0.143    0.216    1.004
-## b.height_carre[3]    0.028   0.549  -1.020  -0.324   0.012    0.361    1.184
-## b.height_carre[4]   -0.137   0.665  -1.569  -0.505  -0.109    0.258    1.139
-## b.height_carre[5]   -0.097   0.645  -1.422  -0.470  -0.089    0.278    1.204
-## b.height_carre[6]   -0.090   0.543  -1.209  -0.426  -0.077    0.256    0.968
-## b.height_carre[7]   -0.096   0.599  -1.355  -0.447  -0.076    0.277    1.059
-## b.height_carre[8]   -0.026   0.606  -1.251  -0.392  -0.024    0.340    1.203
-## b.height_carre[9]    0.249   0.604  -0.817  -0.154   0.197    0.602    1.584
-## b.height_carre[10]   0.191   0.579  -0.837  -0.194   0.146    0.527    1.476
-## b.height_carre[11]  -0.082   0.629  -1.381  -0.447  -0.069    0.292    1.164
-## b.height_carre[12]  -0.345   0.586  -1.666  -0.684  -0.285    0.055    0.651
-## b.height_carre[13]  -0.178   0.522  -1.283  -0.501  -0.152    0.169    0.789
-## deviance           998.604  10.206 980.299 991.456 998.027 1005.146 1020.209
-##                     Rhat  n.eff
-## a[1]               1.001  22000
-## a[2]               1.001 110000
-## a[3]               1.001 200000
-## a[4]               1.001 120000
-## a[5]               1.001  16000
-## a[6]               1.001 220000
-## a[7]               1.001  96000
-## a[8]               1.001  39000
-## a[9]               1.001  32000
-## a[10]              1.001 220000
-## a[11]              1.001 130000
-## a[12]              1.001  30000
-## a[13]              1.001  55000
-## b.bare[1]          1.001  87000
-## b.bare[2]          1.001  40000
-## b.bare[3]          1.001  36000
-## b.bare[4]          1.001  41000
-## b.bare[5]          1.001  21000
-## b.bare[6]          1.001  19000
-## b.bare[7]          1.001   9400
-## b.bare[8]          1.001  14000
-## b.bare[9]          1.001  23000
-## b.bare[10]         1.001  63000
-## b.bare[11]         1.001 140000
-## b.bare[12]         1.001 220000
-## b.bare[13]         1.001  80000
-## b.bare_carre[1]    1.001 220000
-## b.bare_carre[2]    1.001  25000
-## b.bare_carre[3]    1.001  44000
-## b.bare_carre[4]    1.001 210000
-## b.bare_carre[5]    1.001  43000
-## b.bare_carre[6]    1.001  24000
-## b.bare_carre[7]    1.001   9300
-## b.bare_carre[8]    1.001  16000
-## b.bare_carre[9]    1.001  21000
-## b.bare_carre[10]   1.001  99000
-## b.bare_carre[11]   1.001 200000
-## b.bare_carre[12]   1.001 120000
-## b.bare_carre[13]   1.001 170000
-## b.height[1]        1.001  33000
-## b.height[2]        1.001  29000
-## b.height[3]        1.001  32000
-## b.height[4]        1.001  46000
-## b.height[5]        1.001  32000
-## b.height[6]        1.001  27000
-## b.height[7]        1.001  15000
-## b.height[8]        1.001  29000
-## b.height[9]        1.001  19000
-## b.height[10]       1.001  26000
-## b.height[11]       1.001  40000
-## b.height[12]       1.001  20000
-## b.height[13]       1.001  25000
-## b.height_carre[1]  1.001  25000
-## b.height_carre[2]  1.001  51000
-## b.height_carre[3]  1.001  20000
-## b.height_carre[4]  1.001  23000
-## b.height_carre[5]  1.001 150000
-## b.height_carre[6]  1.001  23000
-## b.height_carre[7]  1.001  18000
-## b.height_carre[8]  1.001  16000
-## b.height_carre[9]  1.001  21000
-## b.height_carre[10] 1.001  20000
-## b.height_carre[11] 1.001  41000
-## b.height_carre[12] 1.001  19000
-## b.height_carre[13] 1.001  27000
-## deviance           1.001  28000
+##  n.sims = 225000 iterations saved. Running time = 293.57 secs
+##                    mu.vect sd.vect    2.5%     25%     50%    75%   97.5%  Rhat
+## a[1]                56.298  13.682  31.354  47.519  55.358 64.579  89.450 1.356
+## a[2]                58.682  14.594  33.518  48.738  57.260 67.471  91.770 1.233
+## a[3]                60.688  13.768  38.091  51.231  58.783 68.774  92.017 1.360
+## a[4]                60.076  16.151  31.842  49.568  58.379 69.392  96.281 1.177
+## a[5]                57.036  12.822  34.399  48.202  56.612 64.800  85.933 1.208
+## a[6]                59.478  15.173  33.970  49.204  57.817 68.169  93.793 1.296
+## a[7]                62.958  17.500  35.133  50.181  60.220 73.851 102.084 1.468
+## a[8]                62.715  16.991  36.346  51.191  59.397 71.669 103.394 1.240
+## a[9]                60.136  13.442  36.511  51.161  58.751 67.973  91.592 1.256
+## a[10]               61.244  14.882  33.912  51.358  59.429 71.145  91.665 1.350
+## a[11]               60.832  18.025  34.571  49.451  57.934 68.758 102.074 1.239
+## a[12]               63.046  17.404  36.702  51.278  58.979 71.897 103.974 1.431
+## a[13]               60.782  14.732  36.120  50.792  58.878 69.393  94.068 1.138
+## b.bare[1]          -10.894  18.851 -54.001 -22.125 -10.384  2.009  22.359 1.091
+## b.bare[2]          -10.655  17.902 -50.301 -21.772  -9.714  1.176  21.307 1.082
+## b.bare[3]          -11.075  18.437 -52.038 -22.879  -9.439  1.909  20.143 1.066
+## b.bare[4]           -9.750  18.523 -53.193 -20.715  -8.753  2.326  23.307 1.070
+## b.bare[5]          -11.600  18.727 -54.714 -22.467 -10.322  0.621  22.407 1.089
+## b.bare[6]          -11.097  18.068 -50.394 -22.416  -9.944  1.401  20.135 1.056
+## b.bare[7]          -10.071  17.482 -49.402 -20.844  -9.271  1.715  20.970 1.047
+## b.bare[8]          -10.277  18.213 -51.163 -21.037  -8.637  1.861  21.139 1.065
+## b.bare[9]          -11.620  17.913 -55.435 -22.375 -10.495  0.457  18.727 1.073
+## b.bare[10]         -10.837  17.791 -51.461 -21.717  -8.438  1.392  18.563 1.110
+## b.bare[11]         -11.030  18.311 -54.340 -21.839  -9.613  1.316  20.371 1.061
+## b.bare[12]         -11.688  17.547 -52.536 -23.055  -9.865  0.416  17.841 1.071
+## b.bare[13]         -11.577  18.343 -54.660 -22.834 -10.286  0.943  20.965 1.086
+## b.bare_carre[1]     14.999  17.258 -15.417   2.844  13.895 26.303  52.227 1.133
+## b.bare_carre[2]     15.496  19.141 -16.040   2.395  13.554 26.430  58.274 1.079
+## b.bare_carre[3]     14.944  18.031 -15.008   2.505  13.095 25.310  56.485 1.099
+## b.bare_carre[4]     15.948  18.083 -14.645   3.209  14.452 27.256  55.357 1.111
+## b.bare_carre[5]     15.051  18.176 -16.113   2.183  13.645 26.888  54.152 1.095
+## b.bare_carre[6]     14.261  18.832 -20.896   2.285  13.466 25.827  54.202 1.141
+## b.bare_carre[7]     16.135  19.151 -14.620   2.846  13.465 27.190  61.479 1.186
+## b.bare_carre[8]     14.990  18.053 -15.328   2.109  13.514 26.214  54.323 1.142
+## b.bare_carre[9]     14.622  17.917 -15.737   1.873  13.203 25.346  55.032 1.129
+## b.bare_carre[10]    14.710  17.120 -13.796   2.636  12.910 24.954  53.367 1.130
+## b.bare_carre[11]    15.619  18.967 -15.464   2.246  13.617 27.013  58.238 1.085
+## b.bare_carre[12]    14.565  18.577 -15.057   1.522  12.563 25.216  57.223 1.130
+## b.bare_carre[13]    14.608  16.111 -13.217   3.657  13.381 23.648  52.587 1.120
+## b.height[1]         -5.901  20.946 -47.427 -19.407  -6.546  6.530  38.218 1.093
+## b.height[2]         -6.800  21.658 -48.656 -21.401  -7.148  7.113  36.603 1.082
+## b.height[3]         -6.807  21.046 -46.307 -21.076  -7.891  5.709  38.932 1.118
+## b.height[4]         -6.460  21.051 -47.303 -20.593  -6.899  6.669  36.282 1.086
+## b.height[5]         -6.567  21.073 -48.545 -20.361  -6.681  6.891  34.624 1.078
+## b.height[6]         -6.703  20.337 -47.694 -20.178  -6.386  6.009  34.478 1.098
+## b.height[7]         -5.009  22.199 -47.599 -19.096  -6.423  7.741  42.068 1.110
+## b.height[8]         -6.634  19.655 -46.362 -19.541  -6.314  5.865  32.829 1.063
+## b.height[9]         -6.150  20.550 -47.320 -20.041  -6.010  7.446  33.381 1.061
+## b.height[10]        -6.607  20.321 -46.603 -19.649  -6.926  5.521  35.143 1.102
+## b.height[11]        -6.045  20.999 -47.786 -19.522  -6.423  6.567  37.237 1.106
+## b.height[12]        -5.723  20.766 -46.640 -19.597  -6.360  6.968  35.844 1.087
+## b.height[13]        -7.502  21.037 -49.470 -21.344  -8.001  5.395  35.631 1.103
+## b.height_carre[1]   14.814  25.193 -35.295  -2.052  15.670 31.015  64.785 1.315
+## b.height_carre[2]   13.673  24.464 -33.467  -3.282  14.323 29.918  62.787 1.301
+## b.height_carre[3]   13.608  24.184 -31.902  -3.123  13.813 29.415  65.131 1.203
+## b.height_carre[4]   13.243  25.006 -35.343  -3.677  14.112 29.815  63.350 1.257
+## b.height_carre[5]   13.551  24.285 -32.475  -3.669  14.266 30.090  62.001 1.254
+## b.height_carre[6]   13.501  24.906 -34.328  -3.142  14.659 29.436  61.280 1.247
+## b.height_carre[7]   14.624  23.852 -31.559  -1.907  15.041 30.467  62.686 1.277
+## b.height_carre[8]   13.789  25.245 -35.756  -2.966  15.352 29.862  64.497 1.298
+## b.height_carre[9]   13.773  26.287 -36.861  -3.789  14.382 31.308  65.334 1.364
+## b.height_carre[10]  13.802  24.962 -35.340  -2.883  15.133 29.628  64.266 1.278
+## b.height_carre[11]  13.755  24.727 -33.622  -3.171  14.622 30.044  63.267 1.195
+## b.height_carre[12]  14.106  24.477 -32.102  -3.071  14.800 30.112  65.940 1.329
+## b.height_carre[13]  13.729  24.796 -33.355  -3.541  14.537 30.291  63.674 1.258
+## deviance             0.241   0.743   0.000   0.000   0.002  0.089   2.364 1.018
+##                    n.eff
+## a[1]                  13
+## a[2]                  19
+## a[3]                  13
+## a[4]                  24
+## a[5]                  20
+## a[6]                  15
+## a[7]                  12
+## a[8]                  18
+## a[9]                  17
+## a[10]                 14
+## a[11]                 18
+## a[12]                 12
+## a[13]                 30
+## b.bare[1]             46
+## b.bare[2]             47
+## b.bare[3]             60
+## b.bare[4]             61
+## b.bare[5]             42
+## b.bare[6]             76
+## b.bare[7]             86
+## b.bare[8]             78
+## b.bare[9]             51
+## b.bare[10]            35
+## b.bare[11]            69
+## b.bare[12]            62
+## b.bare[13]            47
+## b.bare_carre[1]       28
+## b.bare_carre[2]       46
+## b.bare_carre[3]       37
+## b.bare_carre[4]       33
+## b.bare_carre[5]       38
+## b.bare_carre[6]       27
+## b.bare_carre[7]       22
+## b.bare_carre[8]       27
+## b.bare_carre[9]       29
+## b.bare_carre[10]      30
+## b.bare_carre[11]      42
+## b.bare_carre[12]      32
+## b.bare_carre[13]      32
+## b.height[1]           48
+## b.height[2]           49
+## b.height[3]           35
+## b.height[4]           46
+## b.height[5]           48
+## b.height[6]           39
+## b.height[7]           40
+## b.height[8]           61
+## b.height[9]           64
+## b.height[10]          38
+## b.height[11]          36
+## b.height[12]          46
+## b.height[13]          39
+## b.height_carre[1]     15
+## b.height_carre[2]     15
+## b.height_carre[3]     20
+## b.height_carre[4]     17
+## b.height_carre[5]     17
+## b.height_carre[6]     18
+## b.height_carre[7]     16
+## b.height_carre[8]     15
+## b.height_carre[9]     13
+## b.height_carre[10]    16
+## b.height_carre[11]    21
+## b.height_carre[12]    14
+## b.height_carre[13]    17
+## deviance             440
 ## 
 ## For each parameter, n.eff is a crude measure of effective sample size,
 ## and Rhat is the potential scale reduction factor (at convergence, Rhat=1).
 ## 
 ## DIC info (using the rule: pV = var(deviance)/2)
-## pV = 52.1 and DIC = 1050.7
+## pV = 0.3 and DIC = 0.5
 ## DIC is an estimate of expected predictive error (lower deviance is better).
 \end{verbatim}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{par}\NormalTok{(}\AttributeTok{mfrow =} \FunctionTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{, }\DecValTok{2}\NormalTok{))}
-\FunctionTok{hist}\NormalTok{(partial\_pooling\_fit}\SpecialCharTok{$}\NormalTok{BUGSoutput}\SpecialCharTok{$}\NormalTok{sims.matrix)}
-\FunctionTok{plot}\NormalTok{(}\FunctionTok{density}\NormalTok{(partial\_pooling\_fit}\SpecialCharTok{$}\NormalTok{BUGSoutput}\SpecialCharTok{$}\NormalTok{sims.matrix))}
+\CommentTok{\#par(mfrow = c(1, 2))}
+\CommentTok{\#hist(partial\_pooling\_fit$BUGSoutput$sims.matrix)}
+\CommentTok{\#plot(density(partial\_pooling\_fit$BUGSoutput$sims.matrix))}
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{Projet1_files/figure-latex/logisitic model complet-1.pdf}
+\subsection{3. Comparing the different
+models}\label{comparing-the-different-models}
+
+Sooooo, like, what are we suppose to put here ???
+
+We are gonna use the DIC to choose the best model, which is \ldots..
+
+\subsection{4. Infering and interpreting the best
+model}\label{infering-and-interpreting-the-best-model}
+
+Sur la base du meilleur modèle, donnez les estimations des paramètres
+ainsi qu'une mesure de l'incertitude associée. Interprétez vos
+résultats.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -516,16 +546,24 @@ subsequent analyses.
 \includegraphics{Projet1_files/figure-latex/unnamed-chunk-2-65.pdf}
 \includegraphics{Projet1_files/figure-latex/unnamed-chunk-2-66.pdf}
 
-Second, we fitted different models that included different combinations
-of effects of bare ground and its square, as well as vegetation height
-and its square. The models were then ranked according to the deviance
-information criterion (DIC, {[}26{]}). Squared effects were included
-because of a likely trade-off between food abundance and accessibility
-on the one hand, and vegetation density and height on the other, which
-would result in curvilinear relationships peaking at intermediate values
-of predictor variables. Based on the best models we calculated
-predictive distributions to evaluate goodness-of-fit. We compared
-observed values with predicted values using x2-diagnostics and report
-Bayesian Pvalues.
+With that, we can use some representations :
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Refaire le graphe de l\textquotesingle{}article :)}
+\end{Highlighting}
+\end{Shaded}
+
+\subsection{5. Discussion}\label{discussion}
+
+Comparez vos résultats à ceux du papier. Sont-ils semblables ou
+différents? Pourquoi selon vous? Si cela vous semble pertinent, proposez
+des pistes d'amélioration de l'analyse.
+
+Well, here, we literally re use the same method as the article
+sooooooo\ldots.
+
+maybe using an exponential or a poisson priors ??? like it's more
+informative ??? idk
 
 \end{document}

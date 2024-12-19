@@ -20,6 +20,7 @@ Article : Patches of Bare Ground as a Staple Commodity for Declining Ground-Fora
 ```{r Loading packages, include=FALSE}
 library(readr)
 library(R2jags)
+library(ggplot2)
 ```
 
 ### Loading dataset
@@ -47,23 +48,23 @@ hoopoe$x_vh_carr <- (x_vh)^2
 
 We put the response variable as a numerical variable instead of a character one.
 
-Doesn't seem to have a relation between the y variable and the two explicative variables ??
+Doesn't seem to have a relation between the y variable (bird occurrence) and the two explicative variables ?? (not logical with their analysis though...)
 
 #### Classic representations
 
 ```{r Some classic representation}
-hoopoe$y <- ifelse(hoopoe$y == "random", 0, 1)
+hoopoe$yi <- ifelse(hoopoe$y == "random", 0, 1)
 hist(hoopoe$bare)
 hist(hoopoe$heightC)
-plot(hoopoe$bare, hoopoe$y)
-plot(hoopoe$heightC, hoopoe$y)
+plot(hoopoe$bare, hoopoe$yi)
+plot(hoopoe$heightC, hoopoe$yi)
 ```
 
 ## 2. Ajusting a simple model
 
-Our goal is to find a relation between the %bareground or the vegetation height and the response variable.
+Our goal is to find a relation between the %bareground or the vegetation height and the response variable (bird occurrence).
 
-For that, we will use a Bayesian approach (since that the name of the course lol) while considering random effects on the slope and on the intercept. To construct that model, we need priors and data. Since we don't have any assumption available on the two explicative variables (actually yes we can imagine some with the representation but let's forget about that), we will consider a normal distribution for the priors, which are here not informative. So, one of the assumptions is that we have enough information in our data to represent the structure and the interaction that we are researching (annnnnnd we have 13 individuals.... robust analysis).
+For that, we will use a Bayesian approach (since that the name of the course lol) while considering random effects on the slope and on the intercept. To construct that model, we need priors and data. Since we don't have any assumption available on the two explicative variables (actually yes we can imagine some with the representation but let's forget about that), we will consider a normal distribird occurrencebird occurrencebution for the priors, which are here not informative. So, one of the assumptions is that we have enough information in our data to represent the structure and the interaction that we are researching (annnnnnd we have 13 individuals.... robust analysis).
 
 ### Construction of the model
 
@@ -89,6 +90,49 @@ datahoopoe <- list(
 ### Construction of the function
 
 To run the MCMC method, we need a function that will be put in input on Jags. That function takes into account random effect on the slopes and on the intercept. We then input the initial values of the parameters. We can finally run the model.
+
+```{r Fonction que random effet sur a}
+# Function
+logisitic <- function(){
+  for(i in 1:N){
+    y[i] ~ dbin(p[i],1) # Binomial likelihood
+    logit(p[i]) <- a[ring[i]] + b.bare * bare[i] + b.bare_carre * bare_carre[i] + b.height * height[i] + b.height_carre* height_carre[i]
+  }
+  for (j in 1:nb){
+    a[j] ~ dnorm(mua,tau.a) 
+  }
+b.bare~ dnorm(0,0.001) 
+b.bare_carre~ dnorm(0,0.001) 
+b.height ~ dnorm(0,0.001) 
+b.height_carre ~ dnorm(0,0.001) 
+mua ~ dnorm(0,0.001) 
+tau.a <- 1 / (sigma.a * sigma.a)
+sigma.a ~ dunif(0,100)
+}
+
+# Initial values
+init1 <- list(a = rep(0.5, datahoopoe$nb), b.bare = 0.5, b.bare_carre = 0.5, b.height = 0.5, b.height_carre = 0.5)
+init2 <- list(a = rep(-0.5, datahoopoe$nb), b.bare = -0.5, b.bare_carre = -0.5, b.height = -0.5, b.height_carre = -0.5)
+init3 <- list(a = rep(0, datahoopoe$nb), b.bare = 0, b.bare_carre = 0, b.height = 0, b.height_carre = 0)
+init4 <- list(a = rep(1, datahoopoe$nb), b.bare = 1, b.bare_carre = 1, b.height = 1, b.height_carre = 1)
+init5 <- list(a = rep(-1, datahoopoe$nb), b.bare = -1, b.bare_carre = -1, b.height = -1, b.height_carre = -1)
+
+init <- list(init1, init2, init3, init4, init5)
+
+# Parameters to monitor
+params <- c("a","b.bare", "b.bare_carre", "b.height", "b.height_carre")
+
+# Call jags to fit model
+partial_pooling_fit <- jags(data = datahoopoe,
+                             inits = init,
+                             parameters.to.save = params,
+                             model.file = logisitic,
+                             n.chains = 5,
+                             n.iter = 40000,
+                             n.burnin = 7500,
+                             n.thin = 1)
+partial_pooling_fit
+```
 
 ```{r}
 # Function
@@ -127,6 +171,7 @@ init2 <- list(a = rep(-0.5, datahoopoe$nb), b.bare = rep(-1, datahoopoe$nb), b.b
 init3 <- list(a = rep(0, datahoopoe$nb), b.bare = rep(0, datahoopoe$nb), b.bare_carre = rep(0, datahoopoe$nb), b.height = rep(0, datahoopoe$nb), b.height_carre = rep(0, datahoopoe$nb))
 init4 <- list(a = rep(-1, datahoopoe$nb), b.bare = rep(-1, datahoopoe$nb), b.bare_carre = rep(-1, datahoopoe$nb), b.height = rep(-1, datahoopoe$nb), b.height_carre = rep(-1, datahoopoe$nb))
 init5 <- list(a = rep(1, datahoopoe$nb), b.bare = rep(1, datahoopoe$nb), b.bare_carre = rep(1, datahoopoe$nb), b.height = rep(1, datahoopoe$nb), b.height_carre = rep(1, datahoopoe$nb))
+
 init <- list(init1, init2, init3, init4, init5)
 
 # Parameters to monitor
@@ -138,13 +183,99 @@ partial_pooling_fit <- jags(data = datahoopoe,
                              parameters.to.save = params,
                              model.file = logisitic,
                              n.chains = 5,
-                             n.iter = 60000,
-                             n.burnin = 15000,
+                             n.iter = 40000,
+                             n.burnin = 7500,
                              n.thin = 1)
 partial_pooling_fit
-#par(mfrow = c(1, 2))
-#hist(partial_pooling_fit$BUGSoutput$sims.matrix)
-#plot(density(partial_pooling_fit$BUGSoutput$sims.matrix))
+```
+
+```{r}
+posterior_samples <- as.mcmc(partial_pooling_fit$BUGSoutput$sims.matrix)
+
+a_samples <- partial_pooling_fit[["BUGSoutput"]][["mean"]][["a"]]
+b_bare_samples <- partial_pooling_fit[["BUGSoutput"]][["mean"]][["b.bare"]]
+b_bare_carre_samples <- partial_pooling_fit[["BUGSoutput"]][["mean"]][["b.bare_carre"]]
+b_height_samples <- partial_pooling_fit[["BUGSoutput"]][["mean"]][["b.height"]]
+b_height_carre_samples <- partial_pooling_fit[["BUGSoutput"]][["mean"]][["b.height_carre"]]
+
+a_mean <- mean(a_samples)
+b_bare_mean <- mean(b_bare_samples)
+b_bare_carre_mean <- mean(b_bare_carre_samples)
+b_height_mean <- mean(b_height_samples)
+b_height_mean_carre <- mean(b_height_carre_samples)
+
+bare_values <- hoopoe$bare
+bare_values_scale <- scale(hoopoe$bare)
+height <- hoopoe$heightC
+height_scale <- scale(hoopoe$heightC)
+
+logit_p <- a_mean + b_bare_mean*bare_values_scale + b_bare_carre_mean*(bare_values_scale)^2 + b_height_mean*height_scale + b_height_mean_carre*(height_scale)^2
+p_mean <- plogis(logit_p)
+
+df <- data.frame(
+  bare = bare_values,
+  height = height,
+  probability = p_mean
+)
+
+ggplot(df, aes(x = bare_values, y = p_mean)) +
+  labs(title = "Probabilité en fonction de % Bareground",
+    x = "% Bareground",
+    y = "Probabilité") +
+  theme_minimal() + geom_point() +
+  scale_y_continuous(limits = c(0,1)) +
+  scale_x_continuous(limits = c(0,100))
+
+ggplot(df, aes(x = height, y = p_mean)) +
+  labs(title = "Probabilité en fonction de % Vegetation Height",
+    x = "% Vegetation Height",
+    y = "Probabilité") +
+  theme_minimal() + geom_point() +
+  scale_y_continuous(limits = c(0,1)) +
+  scale_x_continuous(limits = c(0,40))
+```
+
+```{r}
+df2 <- matrix(nrow=10, ncol=4)
+sequence_bare <- seq(0,100, by= 9)
+sequence_height <- seq(5,40, by= 4)
+df2 <- as.matrix(df2)
+colnames(df2) <- c("proba_bare", "proba_height", "bare", "height")
+
+for (i in 1:(length(sequence_bare)-1)){
+  if (i == 1){
+    df2[i,1] <- mean(df[df[,1]<= sequence_bare[i],3])
+    df2[i,2] <- mean(df[df[,2]<= sequence_height[i],3])
+  }
+  else {
+    df2[i,1] <- mean(df[df[,1] > sequence_bare[i] & df[,1] <= sequence_bare[i+1],3])
+    df2[i,2] <- mean(df[df[,2] > sequence_height[i] & df[,2] <= sequence_height[i+1],3])
+  }
+  df2[i,3] <- sequence_bare[i]
+  df2[i,4] <- sequence_height[i]
+}
+
+ggplot(df2, aes(x = bare, y = proba_bare)) +
+  labs(
+    title = "Probabilité en fonction de % Bareground",
+    x = "% Bareground",
+    y = "Probabilité"
+  ) +
+  theme_minimal() +
+  geom_point() +
+  scale_y_continuous(limits = c(0, 1)) +
+  scale_x_continuous(limits = c(0, 100))
+
+ggplot(df2, aes(x = height, y = proba_height)) +
+  labs(
+    title = "Probabilité en fonction de % Vegetation Height",
+    x = "% Vegetation Height",
+    y = "Probabilité"
+  ) +
+  theme_minimal() +
+  geom_point() +
+  scale_y_continuous(limits = c(0, 1)) +
+  scale_x_continuous(limits = c(0, 40))
 ```
 
 ## 3. Comparing the different models
@@ -153,7 +284,7 @@ Sooooo, like, what are we suppose to put here ???
 
 We are gonna use the DIC to choose the best model, which is .....
 
-##  4. Infering and interpreting the best model
+## 4. Infering and interpreting the best model
 
 Sur la base du meilleur modèle, donnez les estimations des paramètres ainsi qu'une mesure de l'incertitude associée. Interprétez vos résultats.
 
@@ -164,6 +295,8 @@ traceplot(partial_pooling_fit)
 With that, we can use some representations :
 
 ```{r}
+invlogit(x) ##inverse logit
+plot(proba(y), hoopoe$bareground)
 # Refaire le graphe de l'article :)
 ```
 
