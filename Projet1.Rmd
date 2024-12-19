@@ -91,6 +91,861 @@ datahoopoe <- list(
 
 To run the MCMC method, we need a function that will be put in input on Jags. That function takes into account random effect on the slopes and on the intercept. We then input the initial values of the parameters. We can finally run the model.
 
+## Modèles ''
+
+### Effets aléatoires intercept
+
+##Model complet b+b2+h+h2
+
+```{r}
+# Function
+logisitic <- function(){
+  for(i in 1:N){
+    y[i] ~ dbin(p[i],1) # Binomial likelihood
+    logit(p[i]) <- a[ring[i]] + b.bare * bare[i] + b.bare_carre * bare_carre[i] + b.height * height[i] + b.height_carre* height_carre[i]
+  }
+  for (j in 1:nb){
+    a[j] ~ dnorm(mua,tau.a) 
+  }
+b.bare~ dnorm(0,0.001) 
+b.bare_carre~ dnorm(0,0.001) 
+b.height ~ dnorm(0,0.001) 
+b.height_carre ~ dnorm(0,0.001) 
+mua ~ dnorm(0,0.001) 
+tau.a <- 1 / (sigma.a * sigma.a)
+sigma.a ~ dunif(0,100)
+}
+
+# Initial values
+init1 <- list(a = rep(0.5, datahoopoe$nb), b.bare = 0.5, b.bare_carre = 0.5, b.height = 0.5, b.height_carre = 0.5)
+init2 <- list(a = rep(-0.5, datahoopoe$nb), b.bare = -0.5, b.bare_carre = -0.5, b.height = -0.5, b.height_carre = -0.5)
+init3 <- list(a = rep(0, datahoopoe$nb), b.bare = 0, b.bare_carre = 0, b.height = 0, b.height_carre = 0)
+init4 <- list(a = rep(1, datahoopoe$nb), b.bare = 1, b.bare_carre = 1, b.height = 1, b.height_carre = 1)
+init5 <- list(a = rep(-1, datahoopoe$nb), b.bare = -1, b.bare_carre = -1, b.height = -1, b.height_carre = -1)
+
+init <- list(init1, init2, init3, init4, init5)
+
+# Parameters to monitor
+params <- c("a","b.bare", "b.bare_carre", "b.height", "b.height_carre")
+
+# Call jags to fit model
+partial_pooling_fit_complet <- jags(data = datahoopoe,
+                             inits = init,
+                             parameters.to.save = params,
+                             model.file = logisitic,
+                             n.chains = 5,
+                             n.iter = 40000,
+                             n.burnin = 7500,
+                             n.thin = 1)
+partial_pooling_fit_complet
+```
+
+##Model numéro 2 b+h+h\^2
+
+```{r}
+# Function
+logisitic <- function(){
+  for(i in 1:N){
+    y[i] ~ dbin(p[i],1) # Binomial likelihood
+    logit(p[i]) <- a[ring[i]] + b.bare * bare[i] + b.height * height[i] + b.height_carre* height_carre[i]
+  }
+  for (j in 1:nb){
+    a[j] ~ dnorm(mua,tau.a) 
+  }
+b.bare~ dnorm(0,0.001) 
+b.height ~ dnorm(0,0.001) 
+b.height_carre ~ dnorm(0,0.001) 
+mua ~ dnorm(0,0.001) 
+tau.a <- 1 / (sigma.a * sigma.a)
+sigma.a ~ dunif(0,100)
+}
+
+# Initial values
+init1 <- list(a = rep(0.5, datahoopoe$nb), b.bare = 0.5, b.height = 0.5, b.height_carre = 0.5)
+init2 <- list(a = rep(-0.5, datahoopoe$nb), b.bare = -0.5, b.height = -0.5, b.height_carre = -0.5)
+init3 <- list(a = rep(0, datahoopoe$nb), b.bare = 0, b.height = 0, b.height_carre = 0)
+init4 <- list(a = rep(1, datahoopoe$nb), b.bare = 1, b.height = 1, b.height_carre = 1)
+init5 <- list(a = rep(-1, datahoopoe$nb), b.bare = -1, b.height = -1, b.height_carre = -1)
+
+init <- list(init1, init2, init3, init4, init5)
+
+# Parameters to monitor
+params <- c("a","b.bare","b.height", "b.height_carre")
+
+# Call jags to fit model
+partial_pooling_fit_Model2 <- jags(data = datahoopoe,
+                             inits = init,
+                             parameters.to.save = params,
+                             model.file = logisitic,
+                             n.chains = 5,
+                             n.iter = 40000,
+                             n.burnin = 7500,
+                             n.thin = 1)
+partial_pooling_fit_Model2
+```
+
+##Model numéro 2 b+b\^2+h
+
+```{r}
+# Function
+logisitic <- function(){
+  for(i in 1:N){
+    y[i] ~ dbin(p[i],1) # Binomial likelihood
+    logit(p[i]) <- a[ring[i]] + b.bare * bare[i] + b.bare_carre * bare_carre[i] + b.height * height[i]
+  }
+  for (j in 1:nb){
+    a[j] ~ dnorm(mua,tau.a) 
+  }
+b.bare~ dnorm(0,0.001) 
+b.bare_carre~ dnorm(0,0.001)
+b.height ~ dnorm(0,0.001) 
+mua ~ dnorm(0,0.001) 
+tau.a <- 1 / (sigma.a * sigma.a)
+sigma.a ~ dunif(0,100)
+}
+
+# Initial values
+init1 <- list(a = rep(0.5, datahoopoe$nb), b.bare = 0.5, b.bare_carre = 0.5, b.height = 0.5)
+init2 <- list(a = rep(-0.5, datahoopoe$nb), b.bare = -0.5, b.bare_carre = -0.5, b.height = -0.5)
+init3 <- list(a = rep(0, datahoopoe$nb), b.bare = 0, b.bare_carre = 0, b.height = 0)
+init4 <- list(a = rep(1, datahoopoe$nb), b.bare = 1, b.bare_carre = 1, b.height = 1)
+init5 <- list(a = rep(-1, datahoopoe$nb), b.bare = -1, b.bare_carre = -1, b.height = -1)
+
+init <- list(init1, init2, init3, init4, init5)
+
+# Parameters to monitor
+params <- c("a","b.bare","b.height")
+
+# Call jags to fit model
+partial_pooling_fit_Modelbbh <- jags(data = datahoopoe,
+                             inits = init,
+                             parameters.to.save = params,
+                             model.file = logisitic,
+                             n.chains = 5,
+                             n.iter = 40000,
+                             n.burnin = 7500,
+                             n.thin = 1)
+partial_pooling_fit_Modelbbh
+```
+
+##Model numéro 3 h+h\^2
+
+```{r}
+# Function
+logisitic <- function(){
+  for(i in 1:N){
+    y[i] ~ dbin(p[i],1) # Binomial likelihood
+    logit(p[i]) <- a[ring[i]] + b.height * height[i] + b.height_carre* height_carre[i]
+  }
+  for (j in 1:nb){
+    a[j] ~ dnorm(mua,tau.a) 
+  }
+b.height ~ dnorm(0,0.001) 
+b.height_carre ~ dnorm(0,0.001) 
+mua ~ dnorm(0,0.001) 
+tau.a <- 1 / (sigma.a * sigma.a)
+sigma.a ~ dunif(0,100)
+}
+
+# Initial values
+init1 <- list(a = rep(0.5, datahoopoe$nb), b.height = 0.5, b.height_carre = 0.5)
+init2 <- list(a = rep(-0.5, datahoopoe$nb), b.height = -0.5, b.height_carre = -0.5)
+init3 <- list(a = rep(0, datahoopoe$nb), b.height = 0, b.height_carre = 0)
+init4 <- list(a = rep(1, datahoopoe$nb), b.height = 1, b.height_carre = 1)
+init5 <- list(a = rep(-1, datahoopoe$nb), b.height = -1, b.height_carre = -1)
+
+init <- list(init1, init2, init3, init4, init5)
+
+# Parameters to monitor
+params <- c("a", "b.height", "b.height_carre")
+
+# Call jags to fit model
+partial_pooling_fit_Model3 <- jags(data = datahoopoe,
+                             inits = init,
+                             parameters.to.save = params,
+                             model.file = logisitic,
+                             n.chains = 5,
+                             n.iter = 40000,
+                             n.burnin = 7500,
+                             n.thin = 1)
+partial_pooling_fit_Model3
+```
+
+##Model numéro 4 b+b2
+
+```{r}
+# Function
+logisitic <- function(){
+  for(i in 1:N){
+    y[i] ~ dbin(p[i],1) # Binomial likelihood
+    logit(p[i]) <- a[ring[i]] + b.bare * bare[i] + b.bare_carre * bare_carre[i]
+  }
+  for (j in 1:nb){
+    a[j] ~ dnorm(mua,tau.a) 
+  }
+b.bare~ dnorm(0,0.001) 
+b.bare_carre~ dnorm(0,0.001) 
+mua ~ dnorm(0,0.001) 
+tau.a <- 1 / (sigma.a * sigma.a)
+sigma.a ~ dunif(0,100)
+}
+
+# Initial values
+init1 <- list(a = rep(0.5, datahoopoe$nb), b.bare = 0.5, b.bare_carre = 0.5)
+init2 <- list(a = rep(-0.5, datahoopoe$nb), b.bare = -0.5, b.bare_carre = -0.5)
+init3 <- list(a = rep(0, datahoopoe$nb), b.bare = 0, b.bare_carre = 0)
+init4 <- list(a = rep(1, datahoopoe$nb), b.bare = 1, b.bare_carre = 1)
+init5 <- list(a = rep(-1, datahoopoe$nb), b.bare = -1, b.bare_carre = -1)
+
+init <- list(init1, init2, init3, init4, init5)
+
+# Parameters to monitor
+params <- c("a","b.bare", "b.bare_carre")
+
+# Call jags to fit model
+partial_pooling_fit_Model4 <- jags(data = datahoopoe,
+                             inits = init,
+                             parameters.to.save = params,
+                             model.file = logisitic,
+                             n.chains = 5,
+                             n.iter = 40000,
+                             n.burnin = 7500,
+                             n.thin = 1)
+partial_pooling_fit_Model4
+```
+
+##Model numéro 5 b+h
+
+```{r}
+# Function
+logisitic <- function(){
+  for(i in 1:N){
+    y[i] ~ dbin(p[i],1) # Binomial likelihood
+    logit(p[i]) <- a[ring[i]] + b.bare * bare[i] + b.height * height[i]
+  }
+  for (j in 1:nb){
+    a[j] ~ dnorm(mua,tau.a) 
+  }
+b.bare~ dnorm(0,0.001) 
+b.height ~ dnorm(0,0.001) 
+mua ~ dnorm(0,0.001) 
+tau.a <- 1 / (sigma.a * sigma.a)
+sigma.a ~ dunif(0,100)
+}
+
+# Initial values
+init1 <- list(a = rep(0.5, datahoopoe$nb), b.bare = 0.5, b.height = 0.5)
+init2 <- list(a = rep(-0.5, datahoopoe$nb), b.bare = -0.5, b.height = -0.5)
+init3 <- list(a = rep(0, datahoopoe$nb), b.bare = 0, b.height = 0)
+init4 <- list(a = rep(1, datahoopoe$nb), b.bare = 1, b.height = 1)
+init5 <- list(a = rep(-1, datahoopoe$nb), b.bare = -1, b.height = -1)
+
+init <- list(init1, init2, init3, init4, init5)
+
+# Parameters to monitor
+params <- c("a","b.bare", "b.height")
+
+# Call jags to fit model
+partial_pooling_fit_Modelbh <- jags(data = datahoopoe,
+                             inits = init,
+                             parameters.to.save = params,
+                             model.file = logisitic,
+                             n.chains = 5,
+                             n.iter = 40000,
+                             n.burnin = 7500,
+                             n.thin = 1)
+partial_pooling_fit_Modelbh
+```
+
+##Model numéro 6 b
+
+```{r}
+# Function
+logisitic <- function(){
+  for(i in 1:N){
+    y[i] ~ dbin(p[i],1) # Binomial likelihood
+    logit(p[i]) <- a[ring[i]] + b.bare * bare[i]
+  }
+  for (j in 1:nb){
+    a[j] ~ dnorm(mua,tau.a) 
+  }
+b.bare~ dnorm(0,0.001) 
+mua ~ dnorm(0,0.001) 
+tau.a <- 1 / (sigma.a * sigma.a)
+sigma.a ~ dunif(0,100)
+}
+
+# Initial values
+init1 <- list(a = rep(0.5, datahoopoe$nb), b.bare = 0.5)
+init2 <- list(a = rep(-0.5, datahoopoe$nb), b.bare = -0.5)
+init3 <- list(a = rep(0, datahoopoe$nb), b.bare = 0)
+init4 <- list(a = rep(1, datahoopoe$nb), b.bare = 1)
+init5 <- list(a = rep(-1, datahoopoe$nb), b.bare = -1)
+
+init <- list(init1, init2, init3, init4, init5)
+
+# Parameters to monitor
+params <- c("a","b.bare")
+
+# Call jags to fit model
+partial_pooling_fit_Model5 <- jags(data = datahoopoe,
+                             inits = init,
+                             parameters.to.save = params,
+                             model.file = logisitic,
+                             n.chains = 5,
+                             n.iter = 40000,
+                             n.burnin = 7500,
+                             n.thin = 1)
+partial_pooling_fit_Model5
+```
+
+##Model numéro 6 h
+
+```{r }
+# Function
+logisitic <- function(){
+  for(i in 1:N){
+    y[i] ~ dbin(p[i],1) # Binomial likelihood
+    logit(p[i]) <- a[ring[i]] + b.height * height[i]
+  }
+  for (j in 1:nb){
+    a[j] ~ dnorm(mua,tau.a) 
+  }
+b.height ~ dnorm(0,0.001) 
+mua ~ dnorm(0,0.001) 
+tau.a <- 1 / (sigma.a * sigma.a)
+sigma.a ~ dunif(0,100)
+}
+
+# Initial values
+init1 <- list(a = rep(0.5, datahoopoe$nb), b.height = 0.5)
+init2 <- list(a = rep(-0.5, datahoopoe$nb), b.height = -0.5)
+init3 <- list(a = rep(0, datahoopoe$nb), b.height = 0)
+init4 <- list(a = rep(1, datahoopoe$nb), b.height = 1)
+init5 <- list(a = rep(-1, datahoopoe$nb), b.height = -1)
+
+init <- list(init1, init2, init3, init4, init5)
+
+# Parameters to monitor
+params <- c("a","b.height")
+
+# Call jags to fit model
+partial_pooling_fit_Model6 <- jags(data = datahoopoe,
+                             inits = init,
+                             parameters.to.save = params,
+                             model.file = logisitic,
+                             n.chains = 5,
+                             n.iter = 40000,
+                             n.burnin = 7500,
+                             n.thin = 1)
+partial_pooling_fit_Model6
+```
+
+### Effets aléatoires pente-intercept
+
+#Model effet aléatoire sur les pentes Complet
+
+```{r}
+# Function
+logisitic <- function(){
+  for(i in 1:N){
+    y[i] ~ dbin(p[i],1) # Binomial likelihood
+    logit(p[i]) <- a[ring[i]] + b.bare[ring[i]] * bare[i] + b.bare_carre[ring[i]] * bare_carre[i] + b.height[ring[i]] * height[i] + b.height_carre[ring[i]] * height_carre[i]
+  }
+  for (j in 1:nb){
+    a[j] ~ dnorm(mua,tau.a) 
+    b.bare[j] ~ dnorm(mubare,tau.b)
+    b.bare_carre[j] ~ dnorm(mubarec,tau.bc)
+    b.height[j] ~ dnorm(muheight,tau.v)
+    b.height_carre[j] ~ dnorm(muheightc,tau.vc) 
+  }
+mua ~ dnorm(0,0.001) 
+mubare ~ dnorm(0,0.001) 
+mubarec ~ dnorm(0,0.001) 
+muheight ~ dnorm(0,0.001)
+muheightc ~ dnorm(0,0.001)
+tau.a <- 1 / (sigma.a * sigma.a)
+sigma.a ~ dunif(0,100)
+tau.b <- 1 / (sigma.b * sigma.b)
+sigma.b ~ dunif(0,100)
+tau.bc <- 1 / (sigma.bc * sigma.bc)
+sigma.bc ~ dunif(0,100)
+tau.v <- 1 / (sigma.v * sigma.v)
+sigma.v ~ dunif(0,100)
+tau.vc <- 1 / (sigma.vc * sigma.vc)
+sigma.vc ~ dunif(0,100)
+}
+
+# Initial values
+init1 <- list(a = rep(0.5, datahoopoe$nb), b.bare = rep(1, datahoopoe$nb), b.bare_carre = rep(1, datahoopoe$nb), b.height = rep(1, datahoopoe$nb), b.height_carre = rep(1, datahoopoe$nb))
+init2 <- list(a = rep(-0.5, datahoopoe$nb), b.bare = rep(-1, datahoopoe$nb), b.bare_carre = rep(-1, datahoopoe$nb), b.height = rep(-1, datahoopoe$nb), b.height_carre = rep(-1, datahoopoe$nb))
+init3 <- list(a = rep(0, datahoopoe$nb), b.bare = rep(0, datahoopoe$nb), b.bare_carre = rep(0, datahoopoe$nb), b.height = rep(0, datahoopoe$nb), b.height_carre = rep(0, datahoopoe$nb))
+init4 <- list(a = rep(-1, datahoopoe$nb), b.bare = rep(-1, datahoopoe$nb), b.bare_carre = rep(-1, datahoopoe$nb), b.height = rep(-1, datahoopoe$nb), b.height_carre = rep(-1, datahoopoe$nb))
+init5 <- list(a = rep(1, datahoopoe$nb), b.bare = rep(1, datahoopoe$nb), b.bare_carre = rep(1, datahoopoe$nb), b.height = rep(1, datahoopoe$nb), b.height_carre = rep(1, datahoopoe$nb))
+
+init <- list(init1, init2, init3, init4, init5)
+
+# Parameters to monitor
+params <- c("a","b.bare", "b.bare_carre", "b.height", "b.height_carre")
+
+# Call jags to fit model
+partial_pooling_fit_FullRandom <- jags(data = datahoopoe,
+                             inits = init,
+                             parameters.to.save = params,
+                             model.file = logisitic,
+                             n.chains = 5,
+                             n.iter = 40000,
+                             n.burnin = 7500,
+                             n.thin = 1)
+partial_pooling_fit_FullRandom
+```
+
+###Model numéro 2FR b+h+h\^2
+
+```{r}
+# Function
+logisitic <- function(){
+  for(i in 1:N){
+    y[i] ~ dbin(p[i],1) # Binomial likelihood
+    logit(p[i]) <- a[ring[i]] + b.bare[ring[i]] * bare[i] + b.height[ring[i]] * height[i] + b.height_carre[ring[i]] * height_carre[i]
+  }
+  for (j in 1:nb){
+    a[j] ~ dnorm(mua,tau.a) 
+    b.bare[j] ~ dnorm(mubare,tau.b)
+    b.height[j] ~ dnorm(muheight,tau.v)
+    b.height_carre[j] ~ dnorm(muheightc,tau.vc) 
+  }
+mua ~ dnorm(0,0.001) 
+mubare ~ dnorm(0,0.001) 
+muheight ~ dnorm(0,0.001)
+muheightc ~ dnorm(0,0.001)
+tau.a <- 1 / (sigma.a * sigma.a)
+sigma.a ~ dunif(0,100)
+tau.b <- 1 / (sigma.b * sigma.b)
+sigma.b ~ dunif(0,100)
+tau.v <- 1 / (sigma.v * sigma.v)
+sigma.v ~ dunif(0,100)
+tau.vc <- 1 / (sigma.vc * sigma.vc)
+sigma.vc ~ dunif(0,100)
+}
+
+# Initial values
+init1 <- list(a = rep(0.5, datahoopoe$nb), b.bare = rep(1, datahoopoe$nb), b.height = rep(1, datahoopoe$nb), b.height_carre = rep(1, datahoopoe$nb))
+init2 <- list(a = rep(-0.5, datahoopoe$nb), b.bare = rep(-1, datahoopoe$nb), b.height = rep(-1, datahoopoe$nb), b.height_carre = rep(-1, datahoopoe$nb))
+init3 <- list(a = rep(0, datahoopoe$nb), b.bare = rep(0, datahoopoe$nb),  b.height = rep(0, datahoopoe$nb), b.height_carre = rep(0, datahoopoe$nb))
+init4 <- list(a = rep(-1, datahoopoe$nb), b.bare = rep(-1, datahoopoe$nb), b.height = rep(-1, datahoopoe$nb), b.height_carre = rep(-1, datahoopoe$nb))
+init5 <- list(a = rep(1, datahoopoe$nb), b.bare = rep(1, datahoopoe$nb), b.height = rep(1, datahoopoe$nb), b.height_carre = rep(1, datahoopoe$nb))
+
+init <- list(init1, init2, init3, init4, init5)
+
+# Parameters to monitor
+params <- c("a","b.bare", "b.height", "b.height_carre")
+
+# Call jags to fit model
+partial_pooling_fit_FullRandom2 <- jags(data = datahoopoe,
+                             inits = init,
+                             parameters.to.save = params,
+                             model.file = logisitic,
+                             n.chains = 5,
+                             n.iter = 40000,
+                             n.burnin = 7500,
+                             n.thin = 1)
+partial_pooling_fit_FullRandom2
+```
+
+#Model FR 3 b+b\^2+h
+
+```{r}
+# Function
+logisitic <- function(){
+  for(i in 1:N){
+    y[i] ~ dbin(p[i],1) # Binomial likelihood
+    logit(p[i]) <- a[ring[i]] + b.bare[ring[i]] * bare[i] + b.bare_carre[ring[i]] * bare_carre[i] + b.height[ring[i]] * height[i]
+  }
+  for (j in 1:nb){
+    a[j] ~ dnorm(mua,tau.a) 
+    b.bare[j] ~ dnorm(mubare,tau.b)
+    b.bare_carre[j] ~ dnorm(mubarec,tau.bc)
+    b.height[j] ~ dnorm(muheight,tau.v)
+  }
+mua ~ dnorm(0,0.001) 
+mubare ~ dnorm(0,0.001) 
+mubarec ~ dnorm(0,0.001) 
+muheight ~ dnorm(0,0.001)
+tau.a <- 1 / (sigma.a * sigma.a)
+sigma.a ~ dunif(0,100)
+tau.b <- 1 / (sigma.b * sigma.b)
+sigma.b ~ dunif(0,100)
+tau.bc <- 1 / (sigma.bc * sigma.bc)
+sigma.bc ~ dunif(0,100)
+tau.v <- 1 / (sigma.v * sigma.v)
+sigma.v ~ dunif(0,100)
+}
+
+# Initial values
+init1 <- list(a = rep(0.5, datahoopoe$nb), b.bare = rep(1, datahoopoe$nb), b.bare_carre = rep(1, datahoopoe$nb), b.height = rep(1, datahoopoe$nb))
+init2 <- list(a = rep(-0.5, datahoopoe$nb), b.bare = rep(-1, datahoopoe$nb), b.bare_carre = rep(-1, datahoopoe$nb), b.height = rep(-1, datahoopoe$nb))
+init3 <- list(a = rep(0, datahoopoe$nb), b.bare = rep(0, datahoopoe$nb), b.bare_carre = rep(0, datahoopoe$nb), b.height = rep(0, datahoopoe$nb))
+init4 <- list(a = rep(-1, datahoopoe$nb), b.bare = rep(-1, datahoopoe$nb), b.bare_carre = rep(-1, datahoopoe$nb), b.height = rep(-1, datahoopoe$nb))
+init5 <- list(a = rep(1, datahoopoe$nb), b.bare = rep(1, datahoopoe$nb), b.bare_carre = rep(1, datahoopoe$nb), b.height = rep(1, datahoopoe$nb))
+
+init <- list(init1, init2, init3, init4, init5)
+
+# Parameters to monitor
+params <- c("a","b.bare", "b.bare_carre", "b.height")
+
+# Call jags to fit model
+partial_pooling_fit_FullRandom3 <- jags(data = datahoopoe,
+                             inits = init,
+                             parameters.to.save = params,
+                             model.file = logisitic,
+                             n.chains = 5,
+                             n.iter = 40000,
+                             n.burnin = 7500,
+                             n.thin = 1)
+partial_pooling_fit_FullRandom3
+```
+
+#Model FR 4 h+h\^2
+
+```{r}
+# Function
+logisitic <- function(){
+  for(i in 1:N){
+    y[i] ~ dbin(p[i],1) # Binomial likelihood
+    logit(p[i]) <- a[ring[i]] + b.height[ring[i]] * height[i] + b.height_carre[ring[i]] * height_carre[i]
+  }
+  for (j in 1:nb){
+    a[j] ~ dnorm(mua,tau.a)
+    b.height[j] ~ dnorm(muheight,tau.v)
+    b.height_carre[j] ~ dnorm(muheightc,tau.vc) 
+  }
+mua ~ dnorm(0,0.001) 
+muheight ~ dnorm(0,0.001)
+muheightc ~ dnorm(0,0.001)
+tau.a <- 1 / (sigma.a * sigma.a)
+sigma.a ~ dunif(0,100)
+tau.v <- 1 / (sigma.v * sigma.v)
+sigma.v ~ dunif(0,100)
+tau.vc <- 1 / (sigma.vc * sigma.vc)
+sigma.vc ~ dunif(0,100)
+}
+
+# Initial values
+init1 <- list(a = rep(0.5, datahoopoe$nb), b.height = rep(1, datahoopoe$nb), b.height_carre = rep(1, datahoopoe$nb))
+init2 <- list(a = rep(-0.5, datahoopoe$nb), b.height = rep(-1, datahoopoe$nb), b.height_carre = rep(-1, datahoopoe$nb))
+init3 <- list(a = rep(0, datahoopoe$nb), b.height = rep(0, datahoopoe$nb), b.height_carre = rep(0, datahoopoe$nb))
+init4 <- list(a = rep(-1, datahoopoe$nb), b.height = rep(-1, datahoopoe$nb), b.height_carre = rep(-1, datahoopoe$nb))
+init5 <- list(a = rep(1, datahoopoe$nb), b.height = rep(1, datahoopoe$nb), b.height_carre = rep(1, datahoopoe$nb))
+
+init <- list(init1, init2, init3, init4, init5)
+
+# Parameters to monitor
+params <- c("a","b.height", "b.height_carre")
+
+# Call jags to fit model
+partial_pooling_fit_FullRandom4 <- jags(data = datahoopoe,
+                             inits = init,
+                             parameters.to.save = params,
+                             model.file = logisitic,
+                             n.chains = 5,
+                             n.iter = 40000,
+                             n.burnin = 7500,
+                             n.thin = 1)
+partial_pooling_fit_FullRandom4
+```
+
+#Model FR 5 b+b\^2
+
+```{r}
+# Function
+logisitic <- function(){
+  for(i in 1:N){
+    y[i] ~ dbin(p[i],1) # Binomial likelihood
+    logit(p[i]) <- a[ring[i]] + b.bare[ring[i]] * bare[i] + b.bare_carre[ring[i]] * bare_carre[i]
+  }
+  for (j in 1:nb){
+    a[j] ~ dnorm(mua,tau.a) 
+    b.bare[j] ~ dnorm(mubare,tau.b)
+    b.bare_carre[j] ~ dnorm(mubarec,tau.bc)
+  }
+mua ~ dnorm(0,0.001) 
+mubare ~ dnorm(0,0.001) 
+mubarec ~ dnorm(0,0.001) 
+tau.a <- 1 / (sigma.a * sigma.a)
+sigma.a ~ dunif(0,100)
+tau.b <- 1 / (sigma.b * sigma.b)
+sigma.b ~ dunif(0,100)
+tau.bc <- 1 / (sigma.bc * sigma.bc)
+sigma.bc ~ dunif(0,100)
+}
+
+# Initial values
+init1 <- list(a = rep(0.5, datahoopoe$nb), b.bare = rep(1, datahoopoe$nb), b.bare_carre = rep(1, datahoopoe$nb))
+init2 <- list(a = rep(-0.5, datahoopoe$nb), b.bare = rep(-1, datahoopoe$nb), b.bare_carre = rep(-1, datahoopoe$nb))
+init3 <- list(a = rep(0, datahoopoe$nb), b.bare = rep(0, datahoopoe$nb), b.bare_carre = rep(0, datahoopoe$nb))
+init4 <- list(a = rep(-1, datahoopoe$nb), b.bare = rep(-1, datahoopoe$nb), b.bare_carre = rep(-1, datahoopoe$nb))
+init5 <- list(a = rep(1, datahoopoe$nb), b.bare = rep(1, datahoopoe$nb), b.bare_carre = rep(1, datahoopoe$nb))
+
+init <- list(init1, init2, init3, init4, init5)
+
+# Parameters to monitor
+params <- c("a","b.bare", "b.bare_carre")
+
+# Call jags to fit model
+partial_pooling_fit_FullRandom5 <- jags(data = datahoopoe,
+                             inits = init,
+                             parameters.to.save = params,
+                             model.file = logisitic,
+                             n.chains = 5,
+                             n.iter = 40000,
+                             n.burnin = 7500,
+                             n.thin = 1)
+partial_pooling_fit_FullRandom5
+```
+
+#Model FR 6 b+h
+
+```{r}
+# Function
+logisitic <- function(){
+  for(i in 1:N){
+    y[i] ~ dbin(p[i],1) # Binomial likelihood
+    logit(p[i]) <- a[ring[i]] + b.bare[ring[i]] * bare[i] + b.height[ring[i]] * height[i]
+  }
+  for (j in 1:nb){
+    a[j] ~ dnorm(mua,tau.a) 
+    b.bare[j] ~ dnorm(mubare,tau.b)
+    b.height[j] ~ dnorm(muheight,tau.v)
+  }
+mua ~ dnorm(0,0.001) 
+mubare ~ dnorm(0,0.001) 
+muheight ~ dnorm(0,0.001)
+tau.a <- 1 / (sigma.a * sigma.a)
+sigma.a ~ dunif(0,100)
+tau.b <- 1 / (sigma.b * sigma.b)
+sigma.b ~ dunif(0,100)
+tau.v <- 1 / (sigma.v * sigma.v)
+sigma.v ~ dunif(0,100)
+}
+
+# Initial values
+init1 <- list(a = rep(0.5, datahoopoe$nb), b.bare = rep(1, datahoopoe$nb), b.height = rep(1, datahoopoe$nb))
+init2 <- list(a = rep(-0.5, datahoopoe$nb), b.bare = rep(-1, datahoopoe$nb), b.height = rep(-1, datahoopoe$nb))
+init3 <- list(a = rep(0, datahoopoe$nb), b.bare = rep(0, datahoopoe$nb), b.height = rep(0, datahoopoe$nb))
+init4 <- list(a = rep(-1, datahoopoe$nb), b.bare = rep(-1, datahoopoe$nb), b.height = rep(-1, datahoopoe$nb))
+init5 <- list(a = rep(1, datahoopoe$nb), b.bare = rep(1, datahoopoe$nb), b.height = rep(1, datahoopoe$nb))
+
+init <- list(init1, init2, init3, init4, init5)
+
+# Parameters to monitor
+params <- c("a","b.bare", "b.height")
+
+# Call jags to fit model
+partial_pooling_fit_FullRandom6 <- jags(data = datahoopoe,
+                             inits = init,
+                             parameters.to.save = params,
+                             model.file = logisitic,
+                             n.chains = 5,
+                             n.iter = 40000,
+                             n.burnin = 7500,
+                             n.thin = 1)
+partial_pooling_fit_FullRandom6
+```
+
+#Model 7 b
+
+```{r}
+# Function
+logisitic <- function(){
+  for(i in 1:N){
+    y[i] ~ dbin(p[i],1) # Binomial likelihood
+    logit(p[i]) <- a[ring[i]] + b.bare[ring[i]] * bare[i]
+  }
+  for (j in 1:nb){
+    a[j] ~ dnorm(mua,tau.a) 
+    b.bare[j] ~ dnorm(mubare,tau.b)
+  }
+mua ~ dnorm(0,0.001) 
+mubare ~ dnorm(0,0.001) 
+tau.a <- 1 / (sigma.a * sigma.a)
+sigma.a ~ dunif(0,100)
+tau.b <- 1 / (sigma.b * sigma.b)
+sigma.b ~ dunif(0,100)
+}
+
+# Initial values
+init1 <- list(a = rep(0.5, datahoopoe$nb), b.bare = rep(1, datahoopoe$nb))
+init2 <- list(a = rep(-0.5, datahoopoe$nb), b.bare = rep(-1, datahoopoe$nb))
+init3 <- list(a = rep(0, datahoopoe$nb), b.bare = rep(0, datahoopoe$nb))
+init4 <- list(a = rep(-1, datahoopoe$nb), b.bare = rep(-1, datahoopoe$nb))
+init5 <- list(a = rep(1, datahoopoe$nb), b.bare = rep(1, datahoopoe$nb))
+
+init <- list(init1, init2, init3, init4, init5)
+
+# Parameters to monitor
+params <- c("a","b.bare")
+
+# Call jags to fit model
+partial_pooling_fit_FullRandom7 <- jags(data = datahoopoe,
+                             inits = init,
+                             parameters.to.save = params,
+                             model.file = logisitic,
+                             n.chains = 5,
+                             n.iter = 40000,
+                             n.burnin = 7500,
+                             n.thin = 1)
+partial_pooling_fit_FullRandom7
+```
+
+#Model FR 8 h
+
+```{r}
+# Function
+logisitic <- function(){
+  for(i in 1:N){
+    y[i] ~ dbin(p[i],1) # Binomial likelihood
+    logit(p[i]) <- a[ring[i]] + b.height[ring[i]] * height[i] 
+  }
+  for (j in 1:nb){
+    a[j] ~ dnorm(mua,tau.a) 
+    b.height[j] ~ dnorm(muheight,tau.v)
+  }
+mua ~ dnorm(0,0.001) 
+muheight ~ dnorm(0,0.001)
+tau.a <- 1 / (sigma.a * sigma.a)
+sigma.a ~ dunif(0,100)
+tau.v <- 1 / (sigma.v * sigma.v)
+sigma.v ~ dunif(0,100)
+}
+
+# Initial values
+init1 <- list(a = rep(0.5, datahoopoe$nb), b.height = rep(1, datahoopoe$nb))
+init2 <- list(a = rep(-0.5, datahoopoe$nb), b.height = rep(-1, datahoopoe$nb))
+init3 <- list(a = rep(0, datahoopoe$nb), b.height = rep(0, datahoopoe$nb))
+init4 <- list(a = rep(-1, datahoopoe$nb), b.height = rep(-1, datahoopoe$nb))
+init5 <- list(a = rep(1, datahoopoe$nb), b.height = rep(1, datahoopoe$nb))
+
+init <- list(init1, init2, init3, init4, init5)
+
+# Parameters to monitor
+params <- c("a", "b.height")
+
+# Call jags to fit model
+partial_pooling_fit_FullRandom8 <- jags(data = datahoopoe,
+                             inits = init,
+                             parameters.to.save = params,
+                             model.file = logisitic,
+                             n.chains = 5,
+                             n.iter = 40000,
+                             n.burnin = 7500,
+                             n.thin = 1)
+partial_pooling_fit_FullRandom8
+```
+
+##Model nul
+
+```{r Fonction que random effet sur a}
+# Function
+logisitic <- function(){
+  for(i in 1:N){
+    y[i] ~ dbin(p[i],1) # Binomial likelihood
+    logit(p[i]) <- a[ring[i]]
+  }
+  for (j in 1:nb){
+    a[j] ~ dnorm(mua,tau.a) 
+  }
+mua ~ dnorm(0,0.001) 
+tau.a <- 1 / (sigma.a * sigma.a)
+sigma.a ~ dunif(0,100)
+}
+
+# Initial values
+init1 <- list(a = rep(0.5, datahoopoe$nb))
+init2 <- list(a = rep(-0.5, datahoopoe$nb))
+init3 <- list(a = rep(0, datahoopoe$nb))
+init4 <- list(a = rep(1, datahoopoe$nb))
+init5 <- list(a = rep(-1, datahoopoe$nb))
+
+init <- list(init1, init2, init3, init4, init5)
+
+# Parameters to monitor
+params <- c("a")
+
+# Call jags to fit model
+partial_pooling_fit_ModelNulle <- jags(data = datahoopoe,
+                             inits = init,
+                             parameters.to.save = params,
+                             model.file = logisitic,
+                             n.chains = 5,
+                             n.iter = 40000,
+                             n.burnin = 7500,
+                             n.thin = 1)
+partial_pooling_fit_ModelNulle
+```
+
+###Tableau de résumé des données Sans Effet Aléa pente
+
+```{r}
+Tableau <- matrix(nrow = 9, ncol = 2)
+row.names(Tableau) <- c("b+b^2+h+h^2", "b+h+h^2","h+h^2","b+b^2+h","b+b^2","b+h","b","h","Intercept")
+colnames(Tableau) <- c("Deviance","Delta_DIC")
+
+Tableau[1,1] <- partial_pooling_fit_complet[["BUGSoutput"]][["mean"]][["deviance"]]
+Tableau[2,1] <- partial_pooling_fit_Model2[["BUGSoutput"]][["mean"]][["deviance"]]
+Tableau[3,1] <- partial_pooling_fit_Model3[["BUGSoutput"]][["mean"]][["deviance"]]
+Tableau[4,1] <- partial_pooling_fit_Modelbbh[["BUGSoutput"]][["mean"]][["deviance"]]
+Tableau[5,1] <- partial_pooling_fit_Model4[["BUGSoutput"]][["mean"]][["deviance"]]
+Tableau[6,1] <- partial_pooling_fit_Modelbh[["BUGSoutput"]][["mean"]][["deviance"]]
+Tableau[7,1] <- partial_pooling_fit_Model5[["BUGSoutput"]][["mean"]][["deviance"]]
+Tableau[8,1] <- partial_pooling_fit_Model6[["BUGSoutput"]][["mean"]][["deviance"]]
+Tableau[9,1] <- partial_pooling_fit_ModelNulle[["BUGSoutput"]][["mean"]][["deviance"]]
+
+
+Tableau[1,2] <- abs(min(Tableau[,1]) - partial_pooling_fit_complet[["BUGSoutput"]][["mean"]][["deviance"]])
+Tableau[2,2] <- abs(min(Tableau[,1]) - partial_pooling_fit_Model2[["BUGSoutput"]][["mean"]][["deviance"]])
+Tableau[3,2] <- abs(min(Tableau[,1]) - partial_pooling_fit_Model3[["BUGSoutput"]][["mean"]][["deviance"]])
+Tableau[4,2] <- abs(min(Tableau[,1]) - partial_pooling_fit_Modelbbh[["BUGSoutput"]][["mean"]][["deviance"]])
+Tableau[5,2] <- abs(min(Tableau[,1]) - partial_pooling_fit_Model4[["BUGSoutput"]][["mean"]][["deviance"]])
+Tableau[6,2] <- abs(min(Tableau[,1]) - partial_pooling_fit_Modelbh[["BUGSoutput"]][["mean"]][["deviance"]])
+Tableau[7,2] <- abs(min(Tableau[,1]) - partial_pooling_fit_Model5[["BUGSoutput"]][["mean"]][["deviance"]])
+Tableau[8,2] <- abs(min(Tableau[,1]) - partial_pooling_fit_Model6[["BUGSoutput"]][["mean"]][["deviance"]])
+Tableau[9,2] <- abs(min(Tableau[,1]) - partial_pooling_fit_ModelNulle[["BUGSoutput"]][["mean"]][["deviance"]])
+```
+
+###Tableau de résumé des données AVEC Effet Aléa pente
+
+```{r}
+TableauFR <- matrix(nrow = 9, ncol = 2)
+row.names(TableauFR) <- c("b+b^2+h+h^2", "b+h+h^2","h+h^2","b+b^2+h","b+b^2","b+h","b","h","Intercept")
+colnames(TableauFR) <- c("Deviance","Delta_DIC")
+
+TableauFR[1,1] <- partial_pooling_fit_FullRandom[["BUGSoutput"]][["mean"]][["deviance"]]
+TableauFR[2,1] <- partial_pooling_fit_FullRandom2[["BUGSoutput"]][["mean"]][["deviance"]]
+TableauFR[3,1] <- partial_pooling_fit_FullRandom4[["BUGSoutput"]][["mean"]][["deviance"]]
+TableauFR[4,1] <- partial_pooling_fit_FullRandom3[["BUGSoutput"]][["mean"]][["deviance"]]
+TableauFR[5,1] <- partial_pooling_fit_FullRandom5[["BUGSoutput"]][["mean"]][["deviance"]]
+TableauFR[6,1] <- partial_pooling_fit_FullRandom6[["BUGSoutput"]][["mean"]][["deviance"]]
+TableauFR[7,1] <- partial_pooling_fit_FullRandom7[["BUGSoutput"]][["mean"]][["deviance"]]
+TableauFR[8,1] <- partial_pooling_fit_FullRandom8[["BUGSoutput"]][["mean"]][["deviance"]]
+#TableauFR[9,1] <- partial_pooling_fit_FullRandom[["BUGSoutput"]][["mean"]][["deviance"]]
+TableauFR[9,1] <- partial_pooling_fit_ModelNulle[["BUGSoutput"]][["mean"]][["deviance"]]
+
+
+TableauFR[1,2] <- abs(min(TableauFR[,1]) - partial_pooling_fit_FullRandom[["BUGSoutput"]][["mean"]][["deviance"]])
+TableauFR[2,2] <- abs(min(TableauFR[,1]) - partial_pooling_fit_FullRandom2[["BUGSoutput"]][["mean"]][["deviance"]])
+TableauFR[3,2] <- abs(min(TableauFR[,1]) - partial_pooling_fit_FullRandom4[["BUGSoutput"]][["mean"]][["deviance"]])
+TableauFR[4,2] <- abs(min(TableauFR[,1]) - partial_pooling_fit_FullRandom3[["BUGSoutput"]][["mean"]][["deviance"]])
+TableauFR[5,2] <- abs(min(TableauFR[,1]) - partial_pooling_fit_FullRandom5[["BUGSoutput"]][["mean"]][["deviance"]])
+TableauFR[6,2] <- abs(min(TableauFR[,1]) - partial_pooling_fit_FullRandom6[["BUGSoutput"]][["mean"]][["deviance"]])
+TableauFR[7,2] <- abs(min(TableauFR[,1]) - partial_pooling_fit_FullRandom7[["BUGSoutput"]][["mean"]][["deviance"]])
+TableauFR[8,2] <- abs(min(TableauFR[,1]) - partial_pooling_fit_FullRandom8[["BUGSoutput"]][["mean"]][["deviance"]])
+#TableauFR[9,1] <- abs(partial_pooling_fit_FullRandom[["BUGSoutput"]][["mean"]][["deviance"]])
+TableauFR[9,2] <- abs(min(TableauFR[,1]) - partial_pooling_fit_ModelNulle[["BUGSoutput"]][["mean"]][["deviance"]])
+```
+
+## Modèles vs 2 (certains à supprimer)
+
 ```{r Fonction que random effet sur a}
 # Function
 logisitic <- function(){
