@@ -41,23 +41,30 @@ We don't forget to scale the variables.
 # %bareground
 x_bg <- hoopoe$bare
 hoopoe$x_bg_carr <- (x_bg)^2
+hist(hoopoe$bare)
 # vegetation height
 x_vh <- hoopoe$heightC
 hoopoe$x_vh_carr <- (x_vh)^2
+hist(hoopoe$heightC)
+
+cor(hoopoe$bare, hoopoe$heightC) #pas de corrélation entre les deux variables
 ```
 
 We put the response variable as a numerical variable instead of a character one.
 
-Doesn't seem to have a relation between the y variable (bird occurrence) and the two explicative variables ?? (not logical with their analysis though...)
+#### Some statistics
 
-#### Classic representations
-
-```{r Some classic representation}
+```{r Some statistics}
 hoopoe$yi <- ifelse(hoopoe$y == "random", 0, 1)
-hist(hoopoe$bare)
-hist(hoopoe$heightC)
-plot(hoopoe$bare, hoopoe$yi)
-plot(hoopoe$heightC, hoopoe$yi)
+mean(hoopoe$bare[hoopoe$yi == 1]) #46.84
+mean(hoopoe$bare[hoopoe$yi == 0]) #25.35
+ggplot(hoopoe, aes(x = yi, y = bare, group = yi)) + geom_boxplot(width = 0.1, outliers = F) + stat_summary(fun = "mean", geom = "point", shape = 8, size = 2, color = "black")
+t.test(hoopoe$bare[hoopoe$yi == 1], hoopoe$bare[hoopoe$yi == 0]) #semble y avoir un effet significatif du %bareground sur la variable réponse 
+
+mean(hoopoe$heightC[hoopoe$yi == 1]) #13.55
+mean(hoopoe$heightC[hoopoe$yi == 0]) #16.7
+ggplot(hoopoe, aes(x = yi, y = height_C, group = yi)) + geom_boxplot(width = 0.1, outliers = F) + stat_summary(fun = "mean", geom = "point", shape = 8, size = 2, color = "black")
+t.test(hoopoe$heightC[hoopoe$yi == 1], hoopoe$heightC[hoopoe$yi == 0])
 ```
 
 ## 2. Ajusting a simple model
@@ -502,7 +509,7 @@ partial_pooling_fit_FullRandom
 
 ###Model numéro 2FR b+h+h\^2
 
-```{r}
+```{r eval=FALSE, include=FALSE}
 # Function
 logisitic <- function(){
   for(i in 1:N){
@@ -942,107 +949,19 @@ TableauFR[7,2] <- abs(min(TableauFR[,1]) - partial_pooling_fit_FullRandom7[["BUG
 TableauFR[8,2] <- abs(min(TableauFR[,1]) - partial_pooling_fit_FullRandom8[["BUGSoutput"]][["mean"]][["deviance"]])
 #TableauFR[9,1] <- abs(partial_pooling_fit_FullRandom[["BUGSoutput"]][["mean"]][["deviance"]])
 TableauFR[9,2] <- abs(min(TableauFR[,1]) - partial_pooling_fit_ModelNulle[["BUGSoutput"]][["mean"]][["deviance"]])
+
+
+tableauS2 <- matrix(nrow = 5, ncol = 1)
+rownames(tableauS2) <- c("Intercept", "Bareground", "Bareground^2", "Vegetation_height", "Vegetation_height^2")
+
+tableauS2[1,1] <- mean(partial_pooling_fit_FullRandom[["BUGSoutput"]][["mean"]][["a"]])
+tableauS2[2,1] <- mean(partial_pooling_fit_FullRandom[["BUGSoutput"]][["mean"]][["b.bare"]])
+tableauS2[3,1] <- mean(partial_pooling_fit_FullRandom[["BUGSoutput"]][["mean"]][["b.bare_carre"]])
+tableauS2[4,1] <- mean(partial_pooling_fit_FullRandom[["BUGSoutput"]][["mean"]][["b.height"]])
+tableauS2[5,1] <- mean(partial_pooling_fit_FullRandom[["BUGSoutput"]][["mean"]][["b.height_carre"]])
 ```
 
 ## Modèles vs 2 (certains à supprimer)
-
-```{r Fonction que random effet sur a}
-# Function
-logisitic <- function(){
-  for(i in 1:N){
-    y[i] ~ dbin(p[i],1) # Binomial likelihood
-    logit(p[i]) <- a[ring[i]] + b.bare * bare[i] + b.bare_carre * bare_carre[i] + b.height * height[i] 
-    #+ b.height_carre* height_carre[i]
-  }
-  for (j in 1:nb){
-    a[j] ~ dnorm(mua,tau.a) 
-  }
-b.bare~ dnorm(0,0.001) 
-b.bare_carre~ dnorm(0,0.001) 
-b.height ~ dnorm(0,0.001) 
-b.height_carre ~ dnorm(0,0.001) 
-mua ~ dnorm(0,0.001) 
-tau.a <- 1 / (sigma.a * sigma.a)
-sigma.a ~ dunif(0,100)
-}
-
-# Initial values
-init1 <- list(a = rep(0.5, datahoopoe$nb), b.bare = 0.5, b.bare_carre = 0.5, b.height = 0.5, b.height_carre = 0.5)
-init2 <- list(a = rep(-0.5, datahoopoe$nb), b.bare = -0.5, b.bare_carre = -0.5, b.height = -0.5, b.height_carre = -0.5)
-init3 <- list(a = rep(0, datahoopoe$nb), b.bare = 0, b.bare_carre = 0, b.height = 0, b.height_carre = 0)
-init4 <- list(a = rep(1, datahoopoe$nb), b.bare = 1, b.bare_carre = 1, b.height = 1, b.height_carre = 1)
-init5 <- list(a = rep(-1, datahoopoe$nb), b.bare = -1, b.bare_carre = -1, b.height = -1, b.height_carre = -1)
-
-init <- list(init1, init2, init3, init4, init5)
-
-# Parameters to monitor
-params <- c("a","b.bare", "b.bare_carre", "b.height", "b.height_carre")
-
-# Call jags to fit model
-partial_pooling_fit <- jags(data = datahoopoe,
-                             inits = init,
-                             parameters.to.save = params,
-                             model.file = logisitic,
-                             n.chains = 5,
-                             n.iter = 40000,
-                             n.burnin = 7500,
-                             n.thin = 1)
-partial_pooling_fit
-```
-
-```{r}
-logisitic2 <- function(){
-  for(i in 1:N){
-    y[i] ~ dbin(p[i],1) # Binomial likelihood
-    logit(p[i]) <- a[ring[i]] + b.bare[ring[i]] * bare[i] + b.bare_carre[ring[i]] * bare_carre[i] + b.height[ring[i]] * height[i] #+ b.height_carre[ring[i]] * height_carre[i]
-  }
-  for (j in 1:nb){
-    a[j] ~ dnorm(mua,tau.a) 
-    b.bare[j] ~ dnorm(mubare,tau.b)
-    b.bare_carre[j] ~ dnorm(mubarec,tau.bc)
-    b.height[j] ~ dnorm(muheight,tau.v)
-    b.height_carre[j] ~ dnorm(muheightc,tau.vc) 
-  }
-mua ~ dnorm(0,0.001) 
-mubare ~ dnorm(0,0.001) 
-mubarec ~ dnorm(0,0.001) 
-muheight ~ dnorm(0,0.001)
-muheightc ~ dnorm(0,0.001)
-tau.a <- 1 / (sigma.a * sigma.a)
-sigma.a ~ dunif(0,100)
-tau.b <- 1 / (sigma.b * sigma.b)
-sigma.b ~ dunif(0,100)
-tau.bc <- 1 / (sigma.bc * sigma.bc)
-sigma.bc ~ dunif(0,100)
-tau.v <- 1 / (sigma.v * sigma.v)
-sigma.v ~ dunif(0,100)
-tau.vc <- 1 / (sigma.vc * sigma.vc)
-sigma.vc ~ dunif(0,100)
-}
-
-# Initial values
-init1 <- list(a = rep(0.5, datahoopoe$nb), b.bare = rep(1, datahoopoe$nb), b.bare_carre = rep(1, datahoopoe$nb), b.height = rep(1, datahoopoe$nb), b.height_carre = rep(1, datahoopoe$nb))
-init2 <- list(a = rep(-0.5, datahoopoe$nb), b.bare = rep(-1, datahoopoe$nb), b.bare_carre = rep(-1, datahoopoe$nb), b.height = rep(-1, datahoopoe$nb), b.height_carre = rep(-1, datahoopoe$nb))
-init3 <- list(a = rep(0, datahoopoe$nb), b.bare = rep(0, datahoopoe$nb), b.bare_carre = rep(0, datahoopoe$nb), b.height = rep(0, datahoopoe$nb), b.height_carre = rep(0, datahoopoe$nb))
-init4 <- list(a = rep(-1, datahoopoe$nb), b.bare = rep(-1, datahoopoe$nb), b.bare_carre = rep(-1, datahoopoe$nb), b.height = rep(-1, datahoopoe$nb), b.height_carre = rep(-1, datahoopoe$nb))
-init5 <- list(a = rep(1, datahoopoe$nb), b.bare = rep(1, datahoopoe$nb), b.bare_carre = rep(1, datahoopoe$nb), b.height = rep(1, datahoopoe$nb), b.height_carre = rep(1, datahoopoe$nb))
-
-init <- list(init1, init2, init3, init4, init5)
-
-# Parameters to monitor
-params <- c("a","b.bare", "b.bare_carre", "b.height", "b.height_carre")
-
-# Call jags to fit model
-partial_pooling_fit2 <- jags(data = datahoopoe,
-                             inits = init,
-                             parameters.to.save = params,
-                             model.file = logisitic2,
-                             n.chains = 5,
-                             n.iter = 40000,
-                             n.burnin = 7500,
-                             n.thin = 1)
-partial_pooling_fit2
-```
 
 ```{r}
 a_samples <- partial_pooling_fit2[["BUGSoutput"]][["mean"]][["a"]]
@@ -1092,23 +1011,23 @@ ggplot(df, aes(x = height, y = probability)) +
 ```
 
 ```{r}
-data <- matrix(nrow = nrow(hoopoe), ncol = 8)
-colnames(data) <- c("ring", "a", "b.bare", "b.bare_carre", "b.height", "b.height_carre", "bare", "height")
-data[,1] <- hoopoe$ring
-data[,7] <- hoopoe$bare
-data[,8] <- hoopoe$heightC
-for (i in 1:nrow(data)){
-  data[i,2] <- a_samples[data[i,1]]
-  data[i,3] <- b_bare_samples[data[i,1]]
-  data[i,4] <- b_bare_carre_samples[data[i,1]]
-  data[i,5] <- b_height_samples[data[i,1]]
-  data[i,6] <- b_height_carre_samples[data[i,1]]
-}
-height <- scale(data[,8])
-height_C <- scale(data[,8]^2)
-bare <- scale(data[,7])
-bare_C <- scale(data[,7]^2)
-logit_p <- data[,2] + data[,3]*bare + data[,4]*bare_C + data[,5]*height
+#data <- matrix(nrow = nrow(hoopoe), ncol = 8)
+#colnames(data) <- c("ring", "a", "b.bare", "b.bare_carre", "b#.height", "b.height_carre", "bare", "height")
+#data[,1] <- hoopoe$ring
+#data[,7] <- hoopoe$bare
+#data[,8] <- hoopoe$heightC
+#for (i in 1:nrow(data)){
+#  data[i,2] <- a_samples[data[i,1]]
+#  data[i,3] <- b_bare_samples[data[i,1]]
+#  data[i,4] <- b_bare_carre_samples[data[i,1]]
+#  data[i,5] <- b_height_samples[data[i,1]]
+#  data[i,6] <- b_height_carre_samples[data[i,1]]
+#}
+#height <- scale(data[,8])
+#height_C <- scale(data[,8]^2)
+#bare <- scale(data[,7])
+#bare_C <- scale(data[,7]^2)
+#logit_p <- data[,2] + data[,3]*bare + data[,4]*bare_C + data[,5]#*height
 
 logit_p <- matrix(nrow = length(bare), ncol = 13)
 p_mean_vecteur <- matrix(nrow = length(bare), ncol = 15)
@@ -1129,8 +1048,8 @@ ggplot(df3, aes(x = bare, y = p14)) +
     x = "% Bareground",
     y = "Probabilité") +
   theme_minimal() +
-  scale_y_continuous(limits = c(0, 1)) +
-  scale_x_continuous(limits = c(0, 100)) +
+  scale_y_continuous(limits = c(0,1)) +
+  scale_x_continuous(limits = c(0,100)) +
   geom_smooth(method = "gam", formula = y ~ poly(x,2), col = "lightblue", aes(y = p1), se = F)+
   geom_smooth(method = "gam", formula = y ~ poly(x,2), col = "lightblue", aes(y = p2), se = F)+
   geom_smooth(method = "gam", formula = y ~ poly(x,2), col = "lightblue", aes(y = p3), se = F)+
@@ -1151,21 +1070,21 @@ ggplot(df3, aes(x = height, y = p14)) +
     x = "Vegetation Height",
     y = "Probabilité") +
   theme_minimal() +
-  scale_y_continuous(limits = c(0, 1)) +
-  scale_x_continuous(limits = c(0, 40)) +
-  geom_smooth(method = "gam", formula = y ~ poly(x,2), col = "lightblue", aes(y = p1), se = F)+
-  geom_smooth(method = "gam", formula = y ~ poly(x,2), col = "lightblue", aes(y = p2), se = F)+
-  geom_smooth(method = "gam", formula = y ~ poly(x,2), col = "lightblue", aes(y = p3), se = F)+
-  geom_smooth(method = "gam", formula = y ~ poly(x,2), col = "lightblue", aes(y = p4), se = F)+
-  geom_smooth(method = "gam", formula = y ~ poly(x,2), col = "lightblue", aes(y = p5), se = F)+
-  geom_smooth(method = "gam", formula = y ~ poly(x,2), col = "lightblue", aes(y = p6), se = F)+
-  geom_smooth(method = "gam", formula = y ~ poly(x,2), col = "lightblue", aes(y = p7), se = F)+
-  geom_smooth(method = "gam", formula = y ~ poly(x,2), col = "lightblue", aes(y = p8), se = F)+
-  geom_smooth(method = "gam", formula = y ~ poly(x,2), col = "lightblue", aes(y = p9), se = F)+
-  geom_smooth(method = "gam", formula = y ~ poly(x,2), col = "lightblue", aes(y = p10), se = F)+ 
-  geom_smooth(method = "gam", formula = y ~ poly(x,2), col = "lightblue", aes(y = p11), se = F)+
-  geom_smooth(method = "gam", formula = y ~ poly(x,2), col = "lightblue", aes(y = p12), se = F)+
-  geom_smooth(method = "gam", formula = y ~ poly(x,2), col = "lightblue", aes(y = p13), se = F)+
+  scale_y_continuous(limits = c(0,1)) +
+  scale_x_continuous(limits = c(0,40)) +
+  geom_smooth(method = "gam", formula = y ~ poly(x,1), col = "lightblue", aes(y = p1), se = F)+
+  geom_smooth(method = "gam", formula = y ~ poly(x,1), col = "lightblue", aes(y = p2), se = F)+
+  geom_smooth(method = "gam", formula = y ~ poly(x,1), col = "lightblue", aes(y = p3), se = F)+
+  geom_smooth(method = "gam", formula = y ~ poly(x,1), col = "lightblue", aes(y = p4), se = F)+
+  geom_smooth(method = "gam", formula = y ~ poly(x,1), col = "lightblue", aes(y = p5), se = F)+
+  geom_smooth(method = "gam", formula = y ~ poly(x,1), col = "lightblue", aes(y = p6), se = F)+
+  geom_smooth(method = "gam", formula = y ~ poly(x,1), col = "lightblue", aes(y = p7), se = F)+
+  geom_smooth(method = "gam", formula = y ~ poly(x,1), col = "lightblue", aes(y = p8), se = F)+
+  geom_smooth(method = "gam", formula = y ~ poly(x,1), col = "lightblue", aes(y = p9), se = F)+
+  geom_smooth(method = "gam", formula = y ~ poly(x,1), col = "lightblue", aes(y = p10), se = F)+ 
+  geom_smooth(method = "gam", formula = y ~ poly(x,1), col = "lightblue", aes(y = p11), se = F)+
+  geom_smooth(method = "gam", formula = y ~ poly(x,1), col = "lightblue", aes(y = p12), se = F)+
+  geom_smooth(method = "gam", formula = y ~ poly(x,1), col = "lightblue", aes(y = p13), se = F)+
   geom_smooth(method = "gam", formula = y ~ poly(x,1), col = "black", aes(y = p14))
 ```
 
@@ -1189,7 +1108,7 @@ We are gonna use the DIC to choose the best model, which is .....
 Sur la base du meilleur modèle, donnez les estimations des paramètres ainsi qu'une mesure de l'incertitude associée. Interprétez vos résultats.
 
 ```{r}
-traceplot(partial_pooling_fit)
+traceplot(partial_pooling_fit_FullRandom)
 ```
 
 With that, we can use some representations :
@@ -1206,4 +1125,6 @@ Comparez vos résultats à ceux du papier. Sont-ils semblables ou différents? P
 
 Well, here, we literally re use the same method as the article sooooooo....
 
-maybe using an exponential or a poisson priors ??? like it's more informative ??? idk
+-   maybe using an exponential or a poisson priors ??? like it's more informative ??? idk
+
+-   fréquentiste
